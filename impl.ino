@@ -48,7 +48,7 @@ the screen.
 void impl_runBackgroundProcesses()
 {
   long motorCutoffTime = millis() - lastActivityTime;
-  if ((automaticPowerDown) && (powerIsOn) && (motorCutoffTime > motorIdleTimeBeforePowerDown))
+  if ((automaticPowerDown) && (motorCutoffTime > idleTimeBeforePowerDown))
   {
     Serial.println("Powering down because of inactivity.");
     motors_release();
