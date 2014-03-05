@@ -34,16 +34,6 @@ void impl_executeCommand(String &com)
     // that's nice, it worked
     Serial.println("Executed basic.");
   }
-  else if (com.startsWith(CMD_DRAWDIRECTIONTEST))
-    impl_exec_drawTestDirectionSquare();
-  else if (com.startsWith(CMD_MODE_STORE_COMMANDS))
-    impl_exec_changeToStoreCommandMode();
-  else if (com.startsWith(CMD_MODE_LIVE))
-    impl_exec_changeToLiveCommandMode();
-  else if (com.startsWith(CMD_MODE_EXEC_FROM_STORE))
-    impl_exec_execFromStore();
-  else if (com.startsWith(CMD_CHANGELENGTH_RELATIVE))
-    exec_changeLength();
   else
   {
     comms_unrecognisedCommand(com);
@@ -57,7 +47,7 @@ the screen.
 */
 void impl_runBackgroundProcesses()
 {
-  long motorCutoffTime = millis() - lastOperationTime;
+  long motorCutoffTime = millis() - lastActivityTime;
   if ((automaticPowerDown) && (powerIsOn) && (motorCutoffTime > motorIdleTimeBeforePowerDown))
   {
     Serial.println("Powering down because of inactivity.");

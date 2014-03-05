@@ -68,4 +68,5 @@ void motors_calibrateHome() {
   
   motorA.moveTo(mmToMotorSteps(equilibriumA));
   motorB.moveTo(mmToMotorSteps(equilibriumB));
+  isCalibrated = true;
 }

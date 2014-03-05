@@ -1,5 +1,8 @@
 #include <Encoder.h>
 #include <AccelStepperEncoder.h>
+#include <EEPROM.h>
+#include <Servo.h>
+#include "EEPROMAnything.h"
 
 #define DEBUG
 
@@ -33,13 +36,13 @@ int rightEndStopPin = 22;
 float motorToEncoderRatio = 1.51;
 float mmPerRev = 97.0;
 float stepsPerRev = 200.0 * 8.0;
-float encStepsPerRev = stepsPerRev / motorToEncoderRatio;
+float encStepsPerRev;
 
-float stepsPerMm = stepsPerRev / mmPerRev; // 16.49
-float mmPerStep = mmPerRev / stepsPerRev;  // 0.606
+float stepsPerMm;
+float mmPerStep;
 
-float encStepsPerMm = encStepsPerRev / mmPerRev;
-float mmPerEncStep = mmPerRev / encStepsPerRev;
+float encStepsPerMm;
+float mmPerEncStep;
 
 // machine size
 float machineWidth = 308.0;
@@ -54,6 +57,8 @@ long rightEndStopOffset = 97.0;
 float equilibriumA = 0;
 float equilibriumB = 0;
 
+float maxLength = 0.0;
+float minLength = 110.0; // got to be slightly longer than the endstop offsets
 
 /*==========================================================================
     CONTROL VARIABLES... on or off, how fast
@@ -61,6 +66,13 @@ float equilibriumB = 0;
 
 // variable that controls whether the motors step or not.
 volatile boolean runningMotors = true;
+
+// Motor speeds
+long maxSpeed = 3000;
+long accel = 3000;
+
+// whether to use acceleration in accelstepper
+boolean usingAcceleration = true;
 
 // interval timer that will run the stepper motors...
 IntervalTimer motorTimer;
@@ -70,17 +82,16 @@ int motorRunRate = 1000;
 // ... and the function that get's called by it
 void runMotors(void) {
   if (runningMotors) {
-    motorB.run();
-    motorA.run();
+    if (usingAcceleration) {
+      motorA.run();
+      motorB.run();
+    }
+    else {
+      motorA.runSpeed();
+      motorB.runSpeed();
+    }
   }
 }
-
-// Motor speeds
-long maxSpeed = 3000;
-long accel = 3000;
-
-// whether to use acceleration in accelstepper
-boolean usingAcceleration = true;
 
 // Timestamp which is set when some thing happens. 
 // Used to determine whether to go to sleep or not.
@@ -94,30 +105,8 @@ boolean automaticPowerDown = true;
 // length of time since last activity before killing the motors.
 long idleTimeBeforePowerDown = 600000L;
 
-
-// Bunch of useful conversion functions. Nothing complicated here, but
-// nice to have them wrapped up in a meaningful name.
-float mmToMotorSteps(float mm) {
-  return mm * stepsPerMm;
-}
-float mmToEncoderSteps(float mm) {
-  return mm * encStepsPerMm;
-}
-float motorStepsToMm(float steps) {
-  return steps * mmPerStep;
-}
-float encoderStepsToMm(float steps) {
-  return steps * mmPerEncStep;
-}
-
-float encoderToMotorSteps(float encSteps) {
-  return encSteps * motorToEncoderRatio;
-}
-float motorToEncoderSteps(float motorSteps) {
-  return motorSteps / motorToEncoderRatio;
-}
-
-
+// whether the machine is confident of it's location
+boolean isCalibrated = false;
 
 /*==========================================================================
     POLARGRAPH COMMANDS, a subset.
@@ -143,6 +132,11 @@ const static String CMD_SET_ROVE_AREA = "C21";
 const static String CMD_RANDOM_DRAW = "C36";
 const static String CMD_CHANGELENGTH_RELATIVE = "C40";
 
+const String READY = "READY_300";
+const String RESEND = "RESEND";
+const String DRAWING = "BUSY";
+const static String OUT_CMD_SYNC = "SYNC";
+
 /*==========================================================================
     COMMUNICATION PROTOCOL, how to chat
   ========================================================================*/
@@ -152,33 +146,62 @@ const int INLENGTH = 70;
 const char INTERMINATOR = 10;
 
 // reserve some characters
+static String nextCommand = "                                                  ";
 static String inCmd = "                                                  ";
 static String inParam1 = "              ";
 static String inParam2 = "              ";
 static String inParam3 = "              ";
 static String inParam4 = "              ";
+static byte inNoOfParams = 0;
 
 // set to true if the last command was parsed safely and the next slot in 
 // the buffer can be allocated.
 boolean commandConfirmed = false;
 boolean usingCrc = false;
+boolean reportingPosition = true;
 
-// command buffer
-const byte CMD_BUFFER_SIZE = 5;
-static String* commandsBuffered[CMD_BUFFER_SIZE];
-static byte bufferLength = 0;
-
-static byte bufferReadIndex = 0; // pointer to current command
-static byte bufferWriteIndex = 0; // index to next command to overwrite
-
-// prevents new commands from being added to the queue
-static boolean waitUntilAllCommandsAreParsed = false;
-
+/*==========================================================================
+    EEPROM ADDRESSES, this way for hot eeprom action.
+  ========================================================================*/
+const int EEPROM_MACHINE_WIDTH = 0;
+const int EEPROM_MACHINE_HEIGHT = 2;
+const int EEPROM_MACHINE_NAME = 4;
+const int EEPROM_MACHINE_MM_PER_REV = 14; // 4 bytes (float)
+const int EEPROM_MACHINE_STEPS_PER_REV = 18;
 
 
+const int EEPROM_MACHINE_MOTOR_SPEED = 22; // 4 bytes float
+const int EEPROM_MACHINE_MOTOR_ACCEL = 26; // 4 bytes float
+const int EEPROM_MACHINE_PEN_WIDTH = 30; // 4 bytes float
 
+const long EEPROM_MACHINE_HOME_A = 34; // 4 bytes
+const long EEPROM_MACHINE_HOME_B = 38; // 4 bytes
+
+const int EEPROM_PENLIFT_DOWN = 42; // 2 bytes
+const int EEPROM_PENLIFT_UP = 44; // 2 bytes
+
+/*==========================================================================
+    PEN LIFT, a little servo really
+  ========================================================================*/
+Servo penHeight;
+static int upPosition = 90; // defaults
+static int downPosition = 180;
+static int penLiftSpeed = 3; // ms between steps of moving motor
+int const PEN_HEIGHT_SERVO_PIN = 9;
+boolean isPenUp = false;
+
+/*==========================================================================
+    DRAWING STUFF, this and that
+  ========================================================================*/
+float maxSegmentLength = 10.0;
+
+
+/*==========================================================================
+    SOME ACTUAL CODE!!
+  ========================================================================*/
 void setup() {
   Serial.begin(9600);
+  recalculateSizes();
   delay(3000); 
   Serial.println("Polargraph Pro");
   pinMode(rightEndStopPin, INPUT); 
@@ -201,6 +224,40 @@ void setup() {
   motorTimer.begin(runMotors, motorRunRate);
   
   motors_calibrateHome();
+}
+
+void recalculateSizes() {
+  encStepsPerRev = stepsPerRev / motorToEncoderRatio;
+  
+  stepsPerMm = stepsPerRev / mmPerRev; // 16.49
+  mmPerStep = mmPerRev / stepsPerRev;  // 0.606
+  
+  encStepsPerMm = encStepsPerRev / mmPerRev;
+  mmPerEncStep = mmPerRev / encStepsPerRev;
+  
+  maxLength = getMachineA(machineWidth, machineHeight);
+}
+
+// Bunch of useful conversion functions. Nothing complicated here, but
+// nice to have them wrapped up in a meaningful name.
+float mmToMotorSteps(float mm) {
+  return mm * stepsPerMm;
+}
+float mmToEncoderSteps(float mm) {
+  return mm * encStepsPerMm;
+}
+float motorStepsToMm(float steps) {
+  return steps * mmPerStep;
+}
+float encoderStepsToMm(float steps) {
+  return steps * mmPerEncStep;
+}
+
+float encoderToMotorSteps(float encSteps) {
+  return encSteps * motorToEncoderRatio;
+}
+float motorToEncoderSteps(float motorSteps) {
+  return motorSteps / motorToEncoderRatio;
 }
 
 

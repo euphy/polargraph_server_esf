@@ -16,39 +16,13 @@ it contains methods for reading commands from the serial port.
 void comms_commandLoop() {
   while (true) {
     comms_readFromSerial();
-    String *cmd = comms_peekCurrentCommand();
-    if (cmd != NULL) {
-      comms_parseAndExecuteCommand(&cmd);
-      comms_popCurrentCommand();
+    if (commandConfirmed) {
+      comms_parseAndExecuteCommand(nextCommand);
+      nextCommand = "";
     }
   }
 }
-boolean comms_bufferHasSpace() {
-  return bufferLength < CMD_BUFFER_SIZE;
-}
-void comms_pushCommand(String c) {
-  commandsBuffered[bufferWriteIndex] = &c;
-  bufferWriteIndex = (bufferWriteIndex+1) % CMD_BUFFER_SIZE;
-  bufferLength++;
-}
-/** \brief Removes the last returned command from cache. */
-void comms_popCurrentCommand()
-{
-    if(!bufferLength) return; // Should not happen, but safety first
-    if(++bufferReadIndex == CMD_BUFFER_SIZE) bufferReadIndex = 0;
-    bufferLength--;
-}
 
-String* comms_peekCurrentCommand() {
-  if (bufferLength == 0) return NULL;
-  return &commandsBuffered[bufferReadIndex];
-}
-
-String comms_readFromSerial() {
-  if (bufferLength >= CMD_BUFFER_SIZE) return; // all buffers full
-  if (waitUntilAllCommandsAreParsed && bufferLength) return;
-  waitUntilAllCommandsAreParsed=false;
-  
 String comms_readFromSerial()
 {
   // send ready
@@ -81,10 +55,6 @@ String comms_readFromSerial()
       comms_requestResend();
       inS = "";
     }
-    else { // enqueue it!
-      comms_pushCommand(inS);
-    }
-      
   }
   
   
@@ -161,15 +131,13 @@ String comms_readCommand()
   return inS;
 }
 
-void comms_parseAndExecuteCommand(String *in)
+void comms_parseAndExecuteCommand(String in)
 {
   boolean commandParsed = comms_parseCommand(in);
   if (commandParsed)
   {
-    impl_processCommand(lastCommand);
+    impl_processCommand(in);
     in = "";
-    commandConfirmed = false;
-    comms_ready();
   }
   else
   {
@@ -177,6 +145,7 @@ void comms_parseAndExecuteCommand(String *in)
     Serial.print(in);
     Serial.println(F(") not parsed."));
   }
+  
   inNoOfParams = 0;
   
 }
