@@ -15,10 +15,19 @@ it contains methods for reading commands from the serial port.
 
 void comms_commandLoop() {
   while (true) {
-    comms_readFromSerial();
+    nextCommand = comms_readFromSerial();
     if (commandConfirmed) {
-      comms_parseAndExecuteCommand(nextCommand);
-      nextCommand = "";
+      Serial.println("Command Confirmed.");
+      paramsExtracted = comms_parseCommand(nextCommand);
+      if (paramsExtracted) {
+        nextCommand = "";
+        comms_ready();
+        comms_executeParsedCommand();
+      }
+      else
+      {
+        Serial.print(F("Command not parsed."));
+      }
     }
   }
 }
@@ -34,6 +43,7 @@ String comms_readFromSerial()
   String inS = "";
 
   // loop while there's no commands coming in
+  Serial.println("Entering read from serial loop");
   while (inS.length() == 0)
   {
     impl_runBackgroundProcesses();
@@ -51,7 +61,7 @@ String comms_readFromSerial()
     inS = comms_readCommand();
 
     // if it's using the CRC check, then confirmation is easy
-    if (!commandConfirmed) {
+    if (inS != "" && !commandConfirmed) {
       comms_requestResend();
       inS = "";
     }
@@ -71,7 +81,7 @@ boolean comms_parseCommand(String inS)
     comms_extractParams(inS);
     return true;
   }
-  else
+  else 
     return false;
 }  
 
@@ -94,58 +104,29 @@ String comms_readCommand()
   }
   inString[inCount] = 0;                     // null terminate the string
   String inS = inString;
-  
+
   // check the CRC for this command
   // and set commandConfirmed true or false
   int colonPos = inS.lastIndexOf(":");
   if (colonPos != -1)
   {
     usingCrc = true;
-    String cs = inS.substring(colonPos+1);
-    long checksum = asLong(cs);
     inS = inS.substring(0, colonPos);
-    
-    long calcCrc = util_crcString(inS);
-    
-    if (calcCrc == checksum)
-    {
-      commandConfirmed = true;
-    }
-    else
-    {
-      Serial.print(F("I got "));
-      Serial.println(inString);
-      Serial.print(F("Checksum not matched!:"));
-      Serial.println(calcCrc);
-      commandConfirmed = false;
-    }
-
   }
-  else
-  {
-    // then fall back and do the ACK - no action here
-    usingCrc = false;
-    commandConfirmed = false;
-  }
-
+  commandConfirmed = true;  
+  if (inS != "")
+    Serial.println(inS);
   return inS;
 }
 
-void comms_parseAndExecuteCommand(String in)
+void comms_executeParsedCommand()
 {
-  boolean commandParsed = comms_parseCommand(in);
-  if (commandParsed)
+  if (!executing && paramsExtracted)
   {
-    impl_processCommand(in);
-    in = "";
+    executing = true;
+    impl_processCommand(inCmd, inParam1, inParam2, inParam3, inParam4, inNoOfParams);
   }
-  else
-  {
-    Serial.print(F("Command ("));
-    Serial.print(in);
-    Serial.println(F(") not parsed."));
-  }
-  
+  paramsExtracted = false;
   inNoOfParams = 0;
   
 }
@@ -188,16 +169,16 @@ void comms_extractParams(String inS) {
   }
   inNoOfParams = paramNumber;
   
-//    Serial.print(F("Command:"));
-//    Serial.print(inCmd);
-//    Serial.print(F(", p1:"));
-//    Serial.print(inParam1);
-//    Serial.print(F(", p2:"));
-//    Serial.print(inParam2);
-//    Serial.print(F(", p3:"));
-//    Serial.print(inParam3);
-//    Serial.print(F(", p4:"));
-//    Serial.println(inParam4);
+    Serial.print(F("Command:"));
+    Serial.print(inCmd);
+    Serial.print(F(", p1:"));
+    Serial.print(inParam1);
+    Serial.print(F(", p2:"));
+    Serial.print(inParam2);
+    Serial.print(F(", p3:"));
+    Serial.print(inParam3);
+    Serial.print(F(", p4:"));
+    Serial.println(inParam4);
 }
 
 
@@ -227,6 +208,7 @@ float asFloat(String inParam)
 
 void comms_establishContact() 
 {
+  comms_reportPosition();
   comms_ready();
 }
 void comms_ready()
@@ -241,11 +223,36 @@ void comms_requestResend()
 {
   Serial.println(RESEND);
 }
-void comms_unrecognisedCommand(String &com)
+void comms_unrecognisedCommand(String inCmd, String inParam1, String inParam2, String inParam3, String inParam4, String inNoOfParams)
 {
   Serial.print(F("Sorry, "));
-  Serial.print(com);
+  Serial.print(F("Command:"));
+  Serial.print(inCmd);
+  Serial.print(F(", p1:"));
+  Serial.print(inParam1);
+  Serial.print(F(", p2:"));
+  Serial.print(inParam2);
+  Serial.print(F(", p3:"));
+  Serial.print(inParam3);
+  Serial.print(F(", p4:"));
+  Serial.println(inParam4);
   Serial.println(F(" isn't a command I recognise."));
 }  
+
+void comms_reportPosition()
+{
+  if (reportingPosition)
+  {
+    float cX = getCartesianX(machineWidth, encoderStepsToMm(motorA.readEnc()), encoderStepsToMm(motorB.readEnc()));
+    float cY = getCartesianY(cX, encoderStepsToMm(motorA.readEnc()));
+    Serial.print("CARTESIAN,");
+    Serial.print(cX);
+    Serial.print(COMMA);
+    Serial.print(cY);
+    Serial.println(CMD_END);
+  
+    //outputAvailableMemory();
+  }
+}
 
 

@@ -18,36 +18,36 @@ routines are here.
 */
 /**  This method looks only for the basic command set
 */
-boolean exec_executeBasicCommand(String &com)
+boolean exec_executeBasicCommand(String inCmd, String inParam1, String inParam2, String inParam3, String inParam4, String inNoOfParams)
 {
   boolean executed = true;
-  if (com.startsWith(CMD_CHANGELENGTH))
+  if (inCmd.startsWith(CMD_CHANGELENGTH))
     exec_changeLength();
-  else if (com.startsWith(CMD_CHANGELENGTHDIRECT))
+  else if (inCmd.startsWith(CMD_CHANGELENGTHDIRECT))
     exec_drawStraightToPoint();
-  else if (com.startsWith(CMD_SETMOTORSPEED))
+  else if (inCmd.startsWith(CMD_SETMOTORSPEED))
     exec_setMotorSpeed();
-  else if (com.startsWith(CMD_SETMOTORACCEL))
+  else if (inCmd.startsWith(CMD_SETMOTORACCEL))
     exec_setMotorAcceleration();
-  else if (com.startsWith(CMD_SETPOSITION))
+  else if (inCmd.startsWith(CMD_SETPOSITION))
     exec_setPosition();
-  else if (com.startsWith(CMD_PENDOWN))
+  else if (inCmd.startsWith(CMD_PENDOWN))
     penlift_penDown();
-  else if (com.startsWith(CMD_PENUP))
+  else if (inCmd.startsWith(CMD_PENUP))
     penlift_penUp();
-  else if (com.startsWith(CMD_SETMACHINESIZE))
+  else if (inCmd.startsWith(CMD_SETMACHINESIZE))
     exec_setMachineSizeFromCommand();
 //  else if (com.startsWith(CMD_SETMACHINENAME))
 //    exec_setMachineNameFromCommand();
-  else if (com.startsWith(CMD_SETMACHINEMMPERREV))
+  else if (inCmd.startsWith(CMD_SETMACHINEMMPERREV))
     exec_setMachineMmPerRevFromCommand();
-  else if (com.startsWith(CMD_SETMACHINESTEPSPERREV))
+  else if (inCmd.startsWith(CMD_SETMACHINESTEPSPERREV))
     exec_setMachineStepsPerRevFromCommand();
-  else if (com.startsWith(CMD_SETPENLIFTRANGE))
+  else if (inCmd.startsWith(CMD_SETPENLIFTRANGE))
     exec_setPenLiftRange();
-  else if (com.startsWith(CMD_GETMACHINEDETAILS))
+  else if (inCmd.startsWith(CMD_GETMACHINEDETAILS))
     exec_reportMachineSpec();
-  else if (com.startsWith(CMD_RESETEEPROM))
+  else if (inCmd.startsWith(CMD_RESETEEPROM))
     eeprom_resetEeprom();
   else
     executed = false;
@@ -273,7 +273,7 @@ void exec_drawStraightToPoint()
     reportingPosition = false;
     float deltaX = c2x-c1x;    // distance each must move (signed)
     float deltaY = c2y-c1y;
-    float totalDistance = sqrt(sq(deltaX) + sq(deltaY));
+//    float totalDistance = sqrt(sq(deltaX) + sq(deltaY));
 
     long linesegs = 1;            // assume at least 1 line segment will get us there.
     if (abs(deltaX) > abs(deltaY))

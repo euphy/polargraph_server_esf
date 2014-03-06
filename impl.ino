@@ -15,9 +15,9 @@ mega/polarshield version of the polargraph.
 
 /*  Implementation of executeCommand for MEGA-sized boards that
 have command storage features. */
-void impl_processCommand(String com)
+void impl_processCommand(String inCmd, String inParam1, String inParam2, String inParam3, String inParam4, int inNoOfParams)
 {
-  impl_executeCommand(com);
+  impl_executeCommand(inCmd, inParam1, inParam2, inParam3, inParam4, inNoOfParams);
 }
 
 /**  
@@ -27,16 +27,16 @@ void impl_processCommand(String com)
 *  it's own decision tree to try and run one of the additional
 *  routines.
 */
-void impl_executeCommand(String &com)
+void impl_executeCommand(String inCmd, String inParam1, String inParam2, String inParam3, String inParam4, int inNoOfParams)
 {
-  if (exec_executeBasicCommand(com))
+  if (exec_executeBasicCommand(inCmd, inParam1, inParam2, inParam3, inParam4, inNoOfParams))
   {
     // that's nice, it worked
     Serial.println("Executed basic.");
   }
   else
   {
-    comms_unrecognisedCommand(com);
+    comms_unrecognisedCommand(inCmd, inParam1, inParam2, inParam3, inParam4, inNoOfParams);
     comms_ready();
   }
   inNoOfParams = 0;

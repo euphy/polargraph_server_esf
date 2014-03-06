@@ -8,14 +8,6 @@
 
 const String FIRMWARE_VERSION_NO = "2.0";
 
-// for working out CRCs
-static PROGMEM prog_uint32_t crc_table[16] = {
-    0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
-    0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
-    0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
-    0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c
-};
-
 /*==========================================================================
     ELECTRICAL DETAILS and PHYSICAL SIZES
   ========================================================================*/
@@ -26,7 +18,9 @@ Encoder encB(6, 5);
 
 // AccelStepperEncoder objects
 AccelStepperEncoder motorA(AccelStepperEncoder::DRIVER, 14, 15, 1, 1, false);
+int enablePinA = 17;
 AccelStepperEncoder motorB(AccelStepperEncoder::DRIVER, 1, 2, 1, 1, false);
+int enablePinB = 4;
 
 // Endstop pins
 int leftEndStopPin = 21;
@@ -131,11 +125,14 @@ const static String CMD_SETPENLIFTRANGE = "C45";
 const static String CMD_SET_ROVE_AREA = "C21";
 const static String CMD_RANDOM_DRAW = "C36";
 const static String CMD_CHANGELENGTH_RELATIVE = "C40";
+const static String CMD_AUTO_CALIBRATE = "C47";
 
 const String READY = "READY_300";
 const String RESEND = "RESEND";
 const String DRAWING = "BUSY";
 const static String OUT_CMD_SYNC = "SYNC";
+//const static String OUT_CMD_CARTESIAN = "CARTESIAN";
+
 
 /*==========================================================================
     COMMUNICATION PROTOCOL, how to chat
@@ -147,18 +144,22 @@ const char INTERMINATOR = 10;
 
 // reserve some characters
 static String nextCommand = "                                                  ";
-static String inCmd = "                                                  ";
-static String inParam1 = "              ";
-static String inParam2 = "              ";
-static String inParam3 = "              ";
-static String inParam4 = "              ";
+static String inCmd = "";
+static String inParam1 = "";
+static String inParam2 = "";
+static String inParam3 = "";
+static String inParam4 = "";
 static byte inNoOfParams = 0;
+boolean paramsExtracted = false;
+boolean executing = false;
+
 
 // set to true if the last command was parsed safely and the next slot in 
 // the buffer can be allocated.
 boolean commandConfirmed = false;
 boolean usingCrc = false;
 boolean reportingPosition = true;
+boolean requestResend = false;
 
 /*==========================================================================
     EEPROM ADDRESSES, this way for hot eeprom action.
@@ -168,7 +169,6 @@ const int EEPROM_MACHINE_HEIGHT = 2;
 const int EEPROM_MACHINE_NAME = 4;
 const int EEPROM_MACHINE_MM_PER_REV = 14; // 4 bytes (float)
 const int EEPROM_MACHINE_STEPS_PER_REV = 18;
-
 
 const int EEPROM_MACHINE_MOTOR_SPEED = 22; // 4 bytes float
 const int EEPROM_MACHINE_MOTOR_ACCEL = 26; // 4 bytes float
@@ -201,6 +201,7 @@ float maxSegmentLength = 10.0;
   ========================================================================*/
 void setup() {
   Serial.begin(9600);
+  Serial.println("Polargraph Pro");
   recalculateSizes();
   delay(3000); 
   Serial.println("Polargraph Pro");
@@ -209,19 +210,22 @@ void setup() {
 
   // set up motorA
   motorA.setPinsInverted(false, false, true);
-  motorA.setEnablePin(17);
+  motorA.setEnablePin(enablePinA);
   motorA.addEncoder(&encA, motorToEncoderRatio);
   motorA.setAcceleration(accel);
   motorA.setMaxSpeed(maxSpeed);
   
   // setup motorB
   motorB.setPinsInverted(true, false, true);
-  motorB.setEnablePin(4);
+  motorB.setEnablePin(enablePinB);
   motorB.addEncoder(&encB, motorToEncoderRatio);
   motorB.setAcceleration(accel);
   motorB.setMaxSpeed(maxSpeed);
 
   motorTimer.begin(runMotors, motorRunRate);
+  
+  // enable hardware CRC checking
+  SIM_SCGC6 |= SIM_SCGC6_CRC;
   
   motors_calibrateHome();
 }
