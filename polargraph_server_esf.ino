@@ -7,6 +7,7 @@
 #define DEBUG
 
 const String FIRMWARE_VERSION_NO = "2.0";
+char* CMD_AUTO_CALIBRATE = "C47";
 
 /*==========================================================================
     ELECTRICAL DETAILS and PHYSICAL SIZES
@@ -107,7 +108,7 @@ boolean isCalibrated = false;
   ========================================================================*/
 
 const static String COMMA = ",";
-const static String CMD_END = ",END";
+const static char CMD_END[5] = ",END";
 const static String CMD_CHANGELENGTH = "C01";
 const static String CMD_SETPOSITION = "C09";
 const static String CMD_PENDOWN = "C13";
@@ -125,7 +126,6 @@ const static String CMD_SETPENLIFTRANGE = "C45";
 const static String CMD_SET_ROVE_AREA = "C21";
 const static String CMD_RANDOM_DRAW = "C36";
 const static String CMD_CHANGELENGTH_RELATIVE = "C40";
-const static String CMD_AUTO_CALIBRATE = "C47";
 
 const String READY = "READY_300";
 const String RESEND = "RESEND";
@@ -143,12 +143,12 @@ const int INLENGTH = 70;
 const char INTERMINATOR = 10;
 
 // reserve some characters
-static String nextCommand = "                                                  ";
-static String inCmd = "";
-static String inParam1 = "";
-static String inParam2 = "";
-static String inParam3 = "";
-static String inParam4 = "";
+static char* nextCommand = "                                                  ";
+static char* inCmd = "   ";
+static String inParam1 = "           ";
+static String inParam2 = "           ";
+static String inParam3 = "           ";
+static String inParam4 = "           ";
 static byte inNoOfParams = 0;
 boolean paramsExtracted = false;
 boolean executing = false;
@@ -227,7 +227,7 @@ void setup() {
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
   
-  motors_calibrateHome();
+  //motors_calibrateHome();
 }
 
 void recalculateSizes() {

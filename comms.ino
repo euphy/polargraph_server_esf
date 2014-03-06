@@ -32,7 +32,7 @@ void comms_commandLoop() {
   }
 }
 
-String comms_readFromSerial()
+char* comms_readFromSerial()
 {
   // send ready
   // wait for instruction
@@ -40,11 +40,11 @@ String comms_readFromSerial()
   
   // do this bit until we get a command confirmed
   // idle
-  String inS = "";
+  char* inS;
 
   // loop while there's no commands coming in
   Serial.println("Entering read from serial loop");
-  while (inS.length() == 0)
+  while (strlen(inS) == 0)
   {
     impl_runBackgroundProcesses();
     // idle time is spent in this loop.
@@ -74,9 +74,9 @@ String comms_readFromSerial()
   return inS;
 }
 
-boolean comms_parseCommand(String inS)
+boolean comms_parseCommand(char* inS)
 {
-  if (inS.endsWith(CMD_END))
+  if (strstr(inS, CMD_END) != NULL)
   {
     comms_extractParams(inS);
     return true;
@@ -85,7 +85,7 @@ boolean comms_parseCommand(String inS)
     return false;
 }  
 
-String comms_readCommand()
+char* comms_readCommand()
 {
   // check if data has been sent from the computer:
   char inString[INLENGTH+1];
@@ -107,16 +107,12 @@ String comms_readCommand()
 
   // check the CRC for this command
   // and set commandConfirmed true or false
-  int colonPos = inS.lastIndexOf(":");
-  if (colonPos != -1)
-  {
-    usingCrc = true;
-    inS = inS.substring(0, colonPos);
-  }
+  char* t1 = strtok(inString, ":");
+  char* t2 = strtok(NULL, ":");
   commandConfirmed = true;  
-  if (inS != "")
-    Serial.println(inS);
-  return inS;
+  if (strlen(t1) > 0)
+    Serial.println(t1);
+  return t1;
 }
 
 void comms_executeParsedCommand()
@@ -132,19 +128,16 @@ void comms_executeParsedCommand()
 }
 
 
-void comms_extractParams(String inS) {
+void comms_extractParams(char* inS) {
   
   // get number of parameters
   // by counting commas
-  int length = inS.length();
+  int length = strlen(inS);
   
   int startPos = 0;
   int paramNumber = 0;
-  for (int i = 0; i < length; i++) {
-    if (inS.charAt(i) == ',') {
-      String param = inS.substring(startPos, i);
-      startPos = i+1;
-      
+  char* param = strtok(inS, ",");
+  while (param != NULL) {
       switch(paramNumber) {
         case 0:
           inCmd = param;
@@ -165,7 +158,7 @@ void comms_extractParams(String inS) {
           break;
       }
       paramNumber++;
-    }
+      param = strtok(NULL, ",");
   }
   inNoOfParams = paramNumber;
   
@@ -208,11 +201,11 @@ float asFloat(String inParam)
 
 void comms_establishContact() 
 {
-  comms_reportPosition();
   comms_ready();
 }
 void comms_ready()
 {
+//  comms_reportPosition();
   Serial.println(READY);
 }
 void comms_drawing()
