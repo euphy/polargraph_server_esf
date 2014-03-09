@@ -233,7 +233,8 @@ void exec_changeLength()
 }
 
 void exec_changeLength(float a, float b) {
-  int speed = motorA.speed();
+  int speedA = motorA.speed();
+  int speedB = motorB.speed();
   motorA.moveTo(a);
   motorB.moveTo(b);
   if (usingAcceleration) {
@@ -244,18 +245,26 @@ void exec_changeLength(float a, float b) {
     }
   }
   else {
-    while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
+    long aDist = motorA.distanceToGo();
+    long bDist = motorB.distanceToGo();
+    while (aDist != 0 || bDist != 0)
     {
-#ifdef DEBUG
+#ifdef DEBUG_DISTANCE_TO_GO
       Serial.print("Distancetogo: ");
-      Serial.print(motorA.distanceToGo());
+      Serial.print(aDist);
       Serial.print(",");
-      Serial.println(motorB.distanceToGo());
+      Serial.println(bDist);
 #endif
-      motorA.setSpeed(speed);
-      motorB.setSpeed(speed);
-      motorA.runSpeedToPosition();
-      motorB.runSpeedToPosition();
+      if (aDist < 0) motorA.setSpeed(-speedA);
+      else motorA.setSpeed(speedA);
+      if (bDist < 0) motorB.setSpeed(-speedB);
+      else motorB.setSpeed(speedB);
+      
+      if (aDist != 0) motorA.runSpeed();
+      if (bDist != 0) motorB.runSpeed();
+
+      aDist = motorA.distanceToGo();
+      bDist = motorB.distanceToGo();
     }
   }
   

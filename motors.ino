@@ -76,14 +76,9 @@ void motors_calibrateHome() {
   motorA.setAcceleration(3000);
   motorB.setAcceleration(3000);
   
-  motorA.moveTo(mmToMotorSteps(equilibriumA));
-  motorB.moveTo(mmToMotorSteps(equilibriumB));
-  while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
-  {
-    motorA.run();
-    motorB.run();
-  }
-  
+  exec_changeLength(mmToMotorSteps(equilibriumA), mmToMotorSteps(equilibriumB));
+ 
   isCalibrated = true;
   executing = false;
+//  motors_release();
 }
