@@ -56,7 +56,7 @@ void impl_runBackgroundProcesses()
   if (heartbeat.check()) {
     comms_ready();
   }
-  comms_checkForCommand();
+//  comms_checkForCommand();
 
   long motorCutoffTime = millis() - lastActivityTime;
   if ((automaticPowerDown) && powerOn && (motorCutoffTime > idleTimeBeforePowerDown))
