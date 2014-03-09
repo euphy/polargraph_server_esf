@@ -1,11 +1,13 @@
 void motors_release() {
   motorA.disableOutputs();
   motorB.disableOutputs();
+  powerOn = false;
 }
 
 void motors_engage() {
   motorA.enableOutputs();
   motorB.enableOutputs();
+  powerOn = true;
 }
 
 /*
@@ -16,6 +18,11 @@ The distance from the pen tip to the magnets is fixed, and known, measured
 manually during the fitting of the magnets.
 */
 void motors_calibrateHome() {
+  executing = true;
+  motorTimer.begin(runMotors, motorRunRate);
+  
+  motors_release();
+  delay(3000);
   motors_engage();
   motorA.setAcceleration(10000);
   motorB.setAcceleration(10000);
@@ -54,19 +61,29 @@ void motors_calibrateHome() {
 
 #ifdef DEBUG  
   Serial.println("Right Homing: ");
-  Serial.print("Wound in (eSteps): ");Serial.print(leftWoundIn);
-  Serial.print(", and in mm: ");Serial.println(encoderStepsToMm(leftWoundIn));
-  Serial.print("Distance from pentip to bead in eSteps: ");Serial.print(leftDistanceInEncoderSteps);
-  Serial.print(", and in mm: ");Serial.println(leftEndStopOffset);
+  Serial.print("Wound in (eSteps): ");Serial.print(rightWoundIn);
+  Serial.print(", and in mm: ");Serial.println(encoderStepsToMm(rightWoundIn));
+  Serial.print("Distance from pentip to bead in eSteps: ");Serial.print(rightDistanceInEncoderSteps);
+  Serial.print(", and in mm: ");Serial.println(rightEndStopOffset);
   Serial.print("Equilibrium in eSteps: ");Serial.print(encoderStepsToMm(equilibriumB));
-  Serial.print(", and in mm: ");Serial.print(equilibriumB);
+  Serial.print(", and in mm: ");Serial.println(equilibriumB);
 #endif
   
-
+  motorA.synchroniseMotorWithEncoder();
+  motorB.synchroniseMotorWithEncoder();
+  
+  motorTimer.end();
   motorA.setAcceleration(3000);
   motorB.setAcceleration(3000);
   
   motorA.moveTo(mmToMotorSteps(equilibriumA));
   motorB.moveTo(mmToMotorSteps(equilibriumB));
+  while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
+  {
+    motorA.run();
+    motorB.run();
+  }
+  
   isCalibrated = true;
+  executing = false;
 }

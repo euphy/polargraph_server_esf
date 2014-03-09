@@ -32,7 +32,11 @@ void impl_executeCommand(String inCmd, String inParam1, String inParam2, String 
   if (exec_executeBasicCommand(inCmd, inParam1, inParam2, inParam3, inParam4, inNoOfParams))
   {
     // that's nice, it worked
-    Serial.println("Executed basic.");
+    Serial.println(F("Executed basic."));
+  }
+  else if (inCmd.startsWith(CMD_AUTO_CALIBRATE)) {
+    Serial.println("calib.");
+    motors_calibrateHome();
   }
   else
   {
@@ -47,8 +51,11 @@ the screen.
 */
 void impl_runBackgroundProcesses()
 {
+  motorA.correctDeviation();
+  motorB.correctDeviation();
+
   long motorCutoffTime = millis() - lastActivityTime;
-  if ((automaticPowerDown) && (motorCutoffTime > idleTimeBeforePowerDown))
+  if ((automaticPowerDown) && powerOn && (motorCutoffTime > idleTimeBeforePowerDown))
   {
     Serial.println("Powering down because of inactivity.");
     motors_release();

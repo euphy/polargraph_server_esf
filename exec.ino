@@ -207,19 +207,75 @@ void exec_setPosition()
 
 void exec_changeLength()
 {
+  executing = true;
   float x = asFloat(inParam1);
   float y = asFloat(inParam2);
   
   float a = getMachineA(x, y);
   float b = getMachineB(machineWidth, x, y);
+
+  Serial.print(F("Cartesian mm: "));
+  Serial.print(x);
+  Serial.print(COMMA);
+  Serial.println(y);
+  Serial.print(F("Native mm: "));
+  Serial.print(a);
+  Serial.print(COMMA);
+  Serial.println(b);
+  Serial.print(F("Native mSteps: "));
+  Serial.print(mmToMotorSteps(a));
+  Serial.print(COMMA);
+  Serial.println(mmToMotorSteps(b));
   
-  motorA.moveTo(mmToMotorSteps(a));
-  motorB.moveTo(mmToMotorSteps(b));
+  exec_changeLength(mmToMotorSteps(a), mmToMotorSteps(b));
+  
+  executing = false;  
+}
+
+void exec_changeLength(float a, float b) {
+  int speed = motorA.speed();
+  motorA.moveTo(a);
+  motorB.moveTo(b);
+  if (usingAcceleration) {
+    while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
+    {
+      motorA.run();
+      motorB.run();
+    }
+  }
+  else {
+    while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
+    {
+#ifdef DEBUG
+      Serial.print("Distancetogo: ");
+      Serial.print(motorA.distanceToGo());
+      Serial.print(",");
+      Serial.println(motorB.distanceToGo());
+#endif
+      motorA.setSpeed(speed);
+      motorB.setSpeed(speed);
+      motorA.runSpeedToPosition();
+      motorB.runSpeedToPosition();
+    }
+  }
+  
+  Serial.print("Deviation A, B: ");
+  Serial.print(motorA.computeDeviation());
+  Serial.print(", ");
+  Serial.println(motorB.computeDeviation());
+}
+
+void exec_changeLengthCartesianMm(float x, float y) {
+  float pA = getMachineA(x, y);
+  float pB = getMachineB(machineWidth, x, y);
+  pA = mmToMotorSteps(pA);
+  pB = mmToMotorSteps(pB);
+  exec_changeLength(pA, pB);
 }
 
 /**
-This moves the gondola in a straight line between p1 and p2.  Both input coordinates are in 
-the native coordinates system.  
+This moves the gondola in a straight line between p1 and p2.  
+Both input coordinates are cartesian mm.  
 
 The fidelity of the line is controlled by maxLength - this is the longest size a line segment is 
 allowed to be.  1 is finest, slowest.  Use higher values for faster, wobblier.
@@ -231,26 +287,41 @@ void exec_drawStraightToPoint()
   // First, convert these values to cartesian coordinates
   // We're going to figure out how many segments the line
   // needs chopping into.
-  float c2x = asFloat(inParam1);
-  float c2y = asFloat(inParam2);
-  c2x = mmToMotorSteps(c2x);
-  c2y = mmToMotorSteps(c2y);
+  float mmc2x = asFloat(inParam1);
+  float mmc2y = asFloat(inParam2);
+  float c2x = mmToMotorSteps(mmc2x);
+  float c2y = mmToMotorSteps(mmc2y);
   
-  float c1x = getCartesianX(machineWidth, encoderStepsToMm(motorA.readEnc()), encoderStepsToMm(motorB.readEnc()));
-  float c1y = getCartesianY(c1x, encoderStepsToMm(motorA.readEnc()));
-  c1x = mmToMotorSteps(c1x);
-  c1y = mmToMotorSteps(c1y);
+  float mmn1a = encoderStepsToMm(motorA.readEnc());
+  float mmn1b = encoderStepsToMm(motorB.readEnc());
+  float mmc1x = getCartesianX(machineWidth, mmn1a, mmn1b);
+  float mmc1y = getCartesianY(mmc1x, mmn1a);
+  float c1x = mmToMotorSteps(mmc1x);
+  float c1y = mmToMotorSteps(mmc1y);
   
   float machineWidthSteps = mmToMotorSteps(machineWidth);
   float machineHeightSteps = mmToMotorSteps(machineHeight);
-  float margin = mmToMotorSteps(50.0); // 50mm margin is ridiculous
+  float margin = 20.0; // 50mm margin is ridiculous
 
 #ifdef DEBUG
-  Serial.print("From coords: ");
+  Serial.print("From coords (mm-cart): ");
+  Serial.print(mmc1x);
+  Serial.print(",");
+  Serial.println(mmc1y);
+  Serial.print("From coords (mm-native): ");
+  Serial.print(mmn1a);
+  Serial.print(",");
+  Serial.println(mmn1b);
+  Serial.print("To coords (mm-cart): ");
+  Serial.print(mmc2x);
+  Serial.print(",");
+  Serial.println(mmc2y);
+
+  Serial.print("From coords (steps): ");
   Serial.print(c1x);
   Serial.print(",");
   Serial.println(c1y);
-  Serial.print("To coords: ");
+  Serial.print("To coords (steps): ");
   Serial.print(c2x);
   Serial.print(",");
   Serial.println(c2y);
@@ -260,19 +331,19 @@ void exec_drawStraightToPoint()
   // AND ALSO TO see if the current position is on the page.
   // Remember, the native system can easily specify points that can't exist,
   // particularly up at the top.
-  if (c2x > margin 
-    && c2x<machineWidthSteps-margin 
-    && c2y > margin 
-    && c2y <machineHeightSteps-margin
-    && c1x > margin 
-    && c1x<machineWidthSteps-margin 
-    && c1y > margin 
-    && c1y <machineHeightSteps-margin 
+  if (mmc2x > margin 
+    && mmc2x < machineWidth-margin 
+    && mmc2y > margin 
+    && mmc2y < machineHeight-margin
+    && mmc1x > margin 
+    && mmc1x < machineWidth-margin 
+    && mmc1y > margin 
+    && mmc1y < machineHeight-margin 
     )
     {
     reportingPosition = false;
-    float deltaX = c2x-c1x;    // distance each must move (signed)
-    float deltaY = c2y-c1y;
+    float deltaX = mmc2x-mmc1x;    // distance each must move (signed)
+    float deltaY = mmc2y-mmc1y;
 //    float totalDistance = sqrt(sq(deltaX) + sq(deltaY));
 
     long linesegs = 1;            // assume at least 1 line segment will get us there.
@@ -305,28 +376,36 @@ void exec_drawStraightToPoint()
     {
 #ifdef DEBUG
       Serial.print("Line segment: " );
-      Serial.println(linesegs);
+      Serial.print(linesegs);
+      Serial.print(". Segment is ");
+      Serial.print(deltaX);
+      Serial.print(",");
+      Serial.print(deltaY);
+      Serial.println(" steps.");
+      Serial.print("So, moving from ");
+      Serial.print(mmc1x);
+      Serial.print(",");
+      Serial.print(mmc1y);
+      Serial.print("mm to ");
 #endif
       // compute next new location
-      c1x = c1x + deltaX;
-      c1y = c1y + deltaY;
-  
-      // convert back to machine space
-      float pA = getMachineA(c1x, c1y);
-      float pB = getMachineB(machineWidthSteps, c1x, c1y);
-    
+      mmc1x = mmc1x + deltaX;
+      mmc1y = mmc1y + deltaY;
+#ifdef DEBUG
+      Serial.print(mmc1x);
+      Serial.print(",");
+      Serial.print(mmc1y);
+      Serial.print("mm.");
+#endif  
       // do the move
       runSpeed = exec_desiredSpeed(linesegs, runSpeed, accel*4);
-      
 #ifdef DEBUG
       Serial.print("Setting speed:");
       Serial.println(runSpeed);
 #endif
-      
       motorA.setSpeed(runSpeed);
       motorB.setSpeed(runSpeed);
-      motorA.moveTo(pA);
-      motorB.moveTo(pB);
+      exec_changeLengthCartesianMm(mmc1x, mmc1y);
   
       // one line less to do!
       linesegs--;

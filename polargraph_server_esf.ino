@@ -7,7 +7,6 @@
 #define DEBUG
 
 const String FIRMWARE_VERSION_NO = "2.0";
-char* CMD_AUTO_CALIBRATE = "C47";
 
 /*==========================================================================
     ELECTRICAL DETAILS and PHYSICAL SIZES
@@ -71,22 +70,12 @@ boolean usingAcceleration = true;
 
 // interval timer that will run the stepper motors...
 IntervalTimer motorTimer;
-
 // ... the rate it'll do it at (microseconds)
 int motorRunRate = 1000;
-// ... and the function that get's called by it
-void runMotors(void) {
-  if (runningMotors) {
-    if (usingAcceleration) {
-      motorA.run();
-      motorB.run();
-    }
-    else {
-      motorA.runSpeed();
-      motorB.runSpeed();
-    }
-  }
-}
+
+// interval time that will run the deviation checker
+IntervalTimer deviationTimer;
+int deviationRunRate = 1000000; // once a second
 
 // Timestamp which is set when some thing happens. 
 // Used to determine whether to go to sleep or not.
@@ -99,6 +88,7 @@ long comms_rebroadcastStatusInterval = 2000;
 boolean automaticPowerDown = true;
 // length of time since last activity before killing the motors.
 long idleTimeBeforePowerDown = 600000L;
+boolean powerOn = false;
 
 // whether the machine is confident of it's location
 boolean isCalibrated = false;
@@ -107,8 +97,8 @@ boolean isCalibrated = false;
     POLARGRAPH COMMANDS, a subset.
   ========================================================================*/
 
-const static String COMMA = ",";
-const static char CMD_END[5] = ",END";
+#define COMMA ","
+#define CMD_END ",END"
 const static String CMD_CHANGELENGTH = "C01";
 const static String CMD_SETPOSITION = "C09";
 const static String CMD_PENDOWN = "C13";
@@ -126,12 +116,13 @@ const static String CMD_SETPENLIFTRANGE = "C45";
 const static String CMD_SET_ROVE_AREA = "C21";
 const static String CMD_RANDOM_DRAW = "C36";
 const static String CMD_CHANGELENGTH_RELATIVE = "C40";
+const static String CMD_AUTO_CALIBRATE = F("C48");
 
 const String READY = "READY_300";
 const String RESEND = "RESEND";
 const String DRAWING = "BUSY";
 const static String OUT_CMD_SYNC = "SYNC";
-//const static String OUT_CMD_CARTESIAN = "CARTESIAN";
+const static String OUT_CMD_CARTESIAN = F("CARTESIAN");
 
 
 /*==========================================================================
@@ -139,20 +130,19 @@ const static String OUT_CMD_SYNC = "SYNC";
   ========================================================================*/
 
 // max length of incoming command
-const int INLENGTH = 70;
-const char INTERMINATOR = 10;
+const int INLENGTH = 60;
+const char INTERMINATOR = ';';
 
 // reserve some characters
-static char* nextCommand = "                                                  ";
-static char* inCmd = "   ";
-static String inParam1 = "           ";
-static String inParam2 = "           ";
-static String inParam3 = "           ";
-static String inParam4 = "           ";
+static char nextCommand[INLENGTH+1];
+static char inCmd[5] ;
+static char inParam1[11];
+static char inParam2[11];
+static char inParam3[11];
+static char inParam4[11];
 static byte inNoOfParams = 0;
 boolean paramsExtracted = false;
-boolean executing = false;
-
+volatile static boolean executing = false;
 
 // set to true if the last command was parsed safely and the next slot in 
 // the buffer can be allocated.
@@ -222,7 +212,8 @@ void setup() {
   motorB.setAcceleration(accel);
   motorB.setMaxSpeed(maxSpeed);
 
-  motorTimer.begin(runMotors, motorRunRate);
+  //motorTimer.begin(runMotors, motorRunRate);
+  //deviationTimer.begin(deviationChecker, deviationRunRate);
   
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
@@ -240,6 +231,25 @@ void recalculateSizes() {
   mmPerEncStep = mmPerRev / encStepsPerRev;
   
   maxLength = getMachineA(machineWidth, machineHeight);
+}
+
+// ... and the function that get's called by it
+void runMotors(void) {
+  if (runningMotors) {
+    if (usingAcceleration) {
+      motorA.run();
+      motorB.run();
+    }
+    else {
+      motorA.runSpeed();
+      motorB.runSpeed();
+    }
+  }
+}
+
+void deviationChecker(void) {
+  motorA.correctDeviation();
+  motorB.correctDeviation();
 }
 
 // Bunch of useful conversion functions. Nothing complicated here, but
