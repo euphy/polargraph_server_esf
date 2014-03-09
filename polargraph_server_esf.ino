@@ -5,7 +5,9 @@
 #include "EEPROMAnything.h"
 #include <Metro.h>
 
-#define DEBUG_COMMS
+#define DEBUG_COMMS_BUFF
+//#define DEBUG_COMMS
+//#define DEBUG
 
 const String FIRMWARE_VERSION_NO = "2.0";
 
@@ -80,7 +82,7 @@ int motorRunRate = 1000;
 
 // how often the comms thing runs
 IntervalTimer commsTimer;
-int commsRunRate = 100000;
+int commsRunRate = 10000;
 
 // Timestamp which is set when some thing happens. 
 // Used to determine whether to go to sleep or not.
@@ -185,7 +187,7 @@ Servo penHeight;
 static int upPosition = 90; // defaults
 static int downPosition = 180;
 static int penLiftSpeed = 3; // ms between steps of moving motor
-int const PEN_HEIGHT_SERVO_PIN = 9;
+int const PEN_HEIGHT_SERVO_PIN = 23;
 boolean isPenUp = false;
 
 /*==========================================================================

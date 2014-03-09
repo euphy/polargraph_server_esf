@@ -17,16 +17,16 @@ void comms_checkForCommand() {
   if (!commandConfirmed) {
     if (Serial.available() > 0)
     {
-#ifdef DEBUG_COMMS
-      Serial.print("Serial available: ");
+#ifdef DEBUG_COMMS_BUFF
+      Serial.print("Buf: ");
       Serial.println(Serial.available());
-      Serial.print("Reading count ");
+      Serial.print("Pos:");
       Serial.println(bufferPosition);
 #endif
       char ch = Serial.read();       // get it
       nextCommand[bufferPosition] = ch;
-#ifdef DEBUG_COMMS
-      Serial.print("Command in int: ");
+#ifdef DEBUG_COMMS_BUFF
+      Serial.print("Command so far: ");
       Serial.println(nextCommand);
 #endif
       if (ch == INTERMINATOR)
@@ -40,8 +40,13 @@ void comms_checkForCommand() {
           commandConfirmed = false;
         }
         else {
+#ifdef DEBUG_COMMS
+          Serial.print("Confirmed: ");
+          Serial.println(nextCommand);
+#endif
           commandConfirmed = true;
           bufferPosition = 0;
+          comms_ready();          
         }
       }
       else {
@@ -61,11 +66,12 @@ void comms_checkForCommand() {
 
 void comms_commandLoop() {
   while (true) {
-    delay(100);
     impl_runBackgroundProcesses();
     if (commandConfirmed) {
+#ifdef DEBUG_COMMS
       Serial.print(F("Command Confirmed: "));
       Serial.println(nextCommand);
+#endif
       paramsExtracted = comms_parseCommand(nextCommand);
       if (paramsExtracted) {
         Serial.println(F("Params extracted."));
@@ -84,15 +90,16 @@ void comms_commandLoop() {
 
 boolean comms_parseCommand(char * inS)
 {
+#ifdef DEBUG_COMMS
   Serial.print("parsing inS: ");
   Serial.println(inS);
+#endif
   char * comp = strstr(inS, CMD_END);
-  Serial.println(comp);
-  Serial.println(CMD_END);
-  
   if (comp != NULL)
   {
+#ifdef DEBUG_COMMS
     Serial.println(F("About to extract params"));
+#endif
     comms_extractParams(inS);
     return true;
   }
@@ -115,10 +122,12 @@ void comms_extractParams(char* inS) {
   int startPos = 0;
   int paramNumber = 0;
   char * param = strtok(inS, COMMA);
+#ifdef DEBUG_COMMS
   Serial.print(F("Param "));
   Serial.print(paramNumber);
   Serial.print(": ");
   Serial.println(param);
+#endif
   while (param != 0) {
       switch(paramNumber) {
         case 0:
@@ -141,13 +150,15 @@ void comms_extractParams(char* inS) {
       }
       paramNumber++;
       param = strtok(NULL, COMMA);
+#ifdef DEBUG_COMMS
       Serial.print(F("Param "));
       Serial.print(paramNumber);
       Serial.print(": ");
       Serial.println(param);
+#endif
   }
   inNoOfParams = paramNumber;
-  
+#ifdef DEBUG_COMMS
     Serial.print(F("Command:"));
     Serial.print(inCmd);
     Serial.print(F(", p1:"));
@@ -158,14 +169,17 @@ void comms_extractParams(char* inS) {
     Serial.print(inParam3);
     Serial.print(F(", p4:"));
     Serial.println(inParam4);
+#endif
 }
 
 void comms_executeParsedCommand()
 {
+#ifdef DEBUG_COMMS
   Serial.print(F("Executing: "));
   Serial.println(executing);
   Serial.print(F("Params extracted: "));
   Serial.println(paramsExtracted);
+#endif
   if (!executing && paramsExtracted)
   {
     impl_processCommand(inCmd, inParam1, inParam2, inParam3, inParam4, inNoOfParams);
@@ -235,13 +249,18 @@ void comms_reportPosition()
 {
   if (reportingPosition)
   {
-    float cX = getCartesianX(machineWidth, encoderStepsToMm(motorA.readEnc()), encoderStepsToMm(motorB.readEnc()));
-    float cY = getCartesianY(cX, encoderStepsToMm(motorA.readEnc()));
-    Serial.print("CARTESIAN,");
-    Serial.print(cX);
-    Serial.print(COMMA);
-    Serial.print(cY);
-    Serial.println(CMD_END);
+    if (isCalibrated) {
+      float cX = getCartesianX(machineWidth, encoderStepsToMm(motorA.readEnc()), encoderStepsToMm(motorB.readEnc()));
+      float cY = getCartesianY(cX, encoderStepsToMm(motorA.readEnc()));
+      Serial.print("CARTESIAN,");
+      Serial.print(cX);
+      Serial.print(COMMA);
+      Serial.print(cY);
+      Serial.println(CMD_END);
+    }
+    else {
+      Serial.println(F("Not calibrated."));
+    }
   }
 }
 

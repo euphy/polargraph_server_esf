@@ -207,7 +207,6 @@ void exec_setPosition()
 
 void exec_changeLength()
 {
-  executing = true;
   motors_engage();
   float x = asFloat(inParam1);
   float y = asFloat(inParam2);
@@ -229,8 +228,6 @@ void exec_changeLength()
   Serial.println(mmToMotorSteps(b));
   
   exec_changeLength(mmToMotorSteps(a), mmToMotorSteps(b));
-  
-  executing = false;  
 }
 
 void exec_changeLength(float a, float b) {
@@ -313,10 +310,13 @@ void exec_changeLengthAtSpeed(float a, float b, long maxSpeed) {
     bDist = motorB.distanceToGo();
   }
   
-  Serial.print("Deviation A, B: ");
-  Serial.print(motorA.computeDeviation());
-  Serial.print(", ");
-  Serial.println(motorB.computeDeviation());
+//  Serial.print("Deviation A, B: ");
+//  Serial.print(motorA.computeDeviation());
+//  Serial.print(", ");
+//  Serial.println(motorB.computeDeviation());
+  
+  motorA.correctDeviation();
+  motorB.correctDeviation();
 }
 
 void exec_changeLengthCartesianMm(float x, float y) {
@@ -410,7 +410,7 @@ void exec_drawStraightToPoint()
     if (abs(deltaX) > abs(deltaY))
     {
       // slope <=1 case    
-      while ((abs(deltaX)/linesegs) > maxSegmentLength)
+      while ((abs(deltaX)/(float)linesegs) > maxSegmentLength)
       {
         linesegs++;
       }
@@ -418,15 +418,15 @@ void exec_drawStraightToPoint()
     else
     {
       // slope >1 case
-      while ((abs(deltaY)/linesegs) > maxSegmentLength)
+      while ((abs(deltaY)/(float)linesegs) > maxSegmentLength)
       {
         linesegs++;
       }
     }
     
     // reduce delta to one line segments' worth.
-    deltaX = deltaX/linesegs;
-    deltaY = deltaY/linesegs;
+    deltaX = deltaX/(float)linesegs;
+    deltaY = deltaY/(float)linesegs;
   
     // render the line in N shorter segments
     long runSpeed = 0;
