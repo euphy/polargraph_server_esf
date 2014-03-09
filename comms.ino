@@ -13,11 +13,56 @@ it contains methods for reading commands from the serial port.
 
 */
 
+void comms_checkForCommand() {
+  if (!commandConfirmed) {
+    if (Serial.available() > 0)
+    {
+#ifdef DEBUG_COMMS
+      Serial.print("Serial available: ");
+      Serial.println(Serial.available());
+      Serial.print("Reading count ");
+      Serial.println(bufferPosition);
+#endif
+      char ch = Serial.read();       // get it
+      nextCommand[bufferPosition] = ch;
+#ifdef DEBUG_COMMS
+      Serial.print("Command in int: ");
+      Serial.println(nextCommand);
+#endif
+      if (ch == INTERMINATOR)
+      {
+        nextCommand[bufferPosition] = 0;                     // null terminate the string
+        if (strlen(nextCommand) <= 0) {
+          Serial.print("Resend (got): ");
+          Serial.println(nextCommand);
+          comms_requestResend();
+          nextCommand[0] = NULL;
+          commandConfirmed = false;
+        }
+        else {
+          commandConfirmed = true;
+          bufferPosition = 0;
+        }
+      }
+      else {
+        bufferPosition++;
+        if (bufferPosition > INLENGTH)
+        { // if the command is too big, chuck it out!
+          nextCommand[0] = NULL;
+          commandConfirmed = false;
+          bufferPosition = 0;
+        }
+      }
+      lastActivityTime = millis();
+    }
+  }
+}
+
+
 void comms_commandLoop() {
   while (true) {
-    comms_readFromSerial();
-    Serial.print(F("In: "));
-    Serial.println(nextCommand);
+    delay(100);
+    impl_runBackgroundProcesses();
     if (commandConfirmed) {
       Serial.print(F("Command Confirmed: "));
       Serial.println(nextCommand);
@@ -36,88 +81,6 @@ void comms_commandLoop() {
     }
   }
 }
-
-void comms_readFromSerial()
-{
-  // send ready
-  // wait for instruction
-  int idleTime = millis();
-  
-  // loop while there's no commands coming in
-  Serial.println("Entering read from serial loop");
-  Serial.println(strlen(nextCommand));
-  while (strlen(nextCommand) == 0)
-  {
-    impl_runBackgroundProcesses();
-    // idle time is spent in this loop.
-    int timeSince = millis() - idleTime;
-    if (timeSince > comms_rebroadcastStatusInterval)
-    {
-      comms_ready();
-      idleTime = millis();
-    }
-    
-    // and now read the command if one exists
-    // this also sets usingCrc AND commandConfirmed
-    // to true or false
-    comms_readCommand();
-
-    // if it's using the CRC check, then confirmation is easy
-    if (strlen(nextCommand) > 0 && !commandConfirmed) {
-      Serial.print("Resend (got): ");
-      Serial.println(nextCommand);
-      comms_requestResend();
-      nextCommand[0] = NULL;
-    }
-  }
-  Serial.print(F("Exited loop: "));
-  Serial.println(nextCommand);
-  Serial.print(F(" strlen: "));
-  Serial.println(strlen(nextCommand));
-  
-  
-  // CRC was ok, or we aren't using one
-  idleTime = millis();
-  lastActivityTime = idleTime;
-}
-
-void comms_readCommand()
-{
-  commandConfirmed = false;
-  // check if data has been sent from the computer:
-  char inString[INLENGTH+1];
-  int inCount = 0;
-  while (Serial.available() > 0)
-  {
-#ifdef DEBUG_COMMS
-    Serial.print("Reading count ");
-    Serial.println(inCount);
-#endif
-    char ch = Serial.read();       // get it
-    delay(5);
-    inString[inCount] = ch;
-#ifdef DEBUG_COMMS
-    Serial.println(inString);
-#endif
-    if (ch == INTERMINATOR)
-    {
-      inString[inCount] = 0;                     // null terminate the string
-      char* t1 = strtok(inString, ":");
-      char* t2 = strtok(NULL, ":");
-      commandConfirmed = true;  
-      Serial.print("t1: ");
-      Serial.println(t1);
-      Serial.print("t2: ");
-      Serial.println(t2);
-       
-      Serial.flush();
-      strcpy(nextCommand, inString);
-    }
-    inCount++;
-  }
-  
-}
-
 
 boolean comms_parseCommand(char * inS)
 {

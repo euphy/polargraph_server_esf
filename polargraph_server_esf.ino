@@ -3,8 +3,9 @@
 #include <EEPROM.h>
 #include <Servo.h>
 #include "EEPROMAnything.h"
+#include <Metro.h>
 
-#define DEBUG
+#define DEBUG_COMMS
 
 const String FIRMWARE_VERSION_NO = "2.0";
 
@@ -69,17 +70,17 @@ long accel = 3000;
 boolean usingAcceleration = true;
 
 // interval timer that will run the stepper motors...
-//IntervalTimer motorTimer;
-//// ... the rate it'll do it at (microseconds)
-//int motorRunRate = 1000;
-//
+IntervalTimer motorTimer;
+// ... the rate it'll do it at (microseconds)
+int motorRunRate = 1000;
+
 //// interval time that will run the deviation checker
 //IntervalTimer deviationTimer;
 //int deviationRunRate = 1000000; // once a second
 
 // how often the comms thing runs
 IntervalTimer commsTimer;
-int commsRunRate = 1000;
+int commsRunRate = 100000;
 
 // Timestamp which is set when some thing happens. 
 // Used to determine whether to go to sleep or not.
@@ -87,6 +88,7 @@ volatile long lastActivityTime = 0L;
 
 // period between status rebroadcasts
 long comms_rebroadcastStatusInterval = 2000;
+Metro heartbeat = Metro(comms_rebroadcastStatusInterval);
 
 // Whether to kill the motors after inactivity
 boolean automaticPowerDown = true;
@@ -139,6 +141,7 @@ const char INTERMINATOR = ';';
 
 // reserve some characters
 static char nextCommand[INLENGTH+1];
+volatile int bufferPosition = 0;
 static char inCmd[5] ;
 static char inParam1[11];
 static char inParam2[11];
@@ -146,6 +149,7 @@ static char inParam3[11];
 static char inParam4[11];
 static byte inNoOfParams = 0;
 boolean paramsExtracted = false;
+boolean readyForNextCommand = false;
 volatile static boolean executing = false;
 
 // set to true if the last command was parsed safely and the next slot in 
@@ -239,38 +243,18 @@ void recalculateSizes() {
 }
 
 // ... and the function that get's called by it
-//void runMotors(void) {
-//  if (runningMotors) {
-//    if (usingAcceleration) {
-//      motorA.run();
-//      motorB.run();
-//    }
-//    else {
-//      float aDist = motorA.distanceToGo();
-//      float bDist = motorB.distanceToGo();
-//      while (aDist != 0 || bDist != 0)
-//      {
-//    #ifdef DEBUG_DISTANCE_TO_GO
-//        Serial.print("Distancetogo: ");
-//        Serial.print(aDist);
-//        Serial.print(",");
-//        Serial.println(bDist);
-//    #endif
-//    
-//        if (aDist < 0) motorA.setSpeed(-aSpeed);
-//        else motorA.setSpeed(aSpeed);
-//        if (bDist < 0) motorB.setSpeed(-bSpeed);
-//        else motorB.setSpeed(bSpeed);
-//        
-//        if (aDist != 0) motorA.runSpeed();
-//        if (bDist != 0) motorB.runSpeed();
-//    
-//        aDist = motorA.distanceToGo();
-//        bDist = motorB.distanceToGo();      
-//      }
-//    }
-//  }
-//}
+void runMotors(void) {
+  if (runningMotors) {
+    if (usingAcceleration) {
+      motorA.run();
+      motorB.run();
+    }
+    else {
+      motorA.runSpeed();
+      motorB.runSpeed();
+    }
+  }
+}
 
 void deviationChecker(void) {
   motorA.correctDeviation();

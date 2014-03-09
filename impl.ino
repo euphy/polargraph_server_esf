@@ -51,8 +51,12 @@ the screen.
 */
 void impl_runBackgroundProcesses()
 {
-  motorA.correctDeviation();
-  motorB.correctDeviation();
+//  motorA.correctDeviation();
+//  motorB.correctDeviation();
+  if (heartbeat.check()) {
+    comms_ready();
+  }
+  comms_checkForCommand();
 
   long motorCutoffTime = millis() - lastActivityTime;
   if ((automaticPowerDown) && powerOn && (motorCutoffTime > idleTimeBeforePowerDown))
