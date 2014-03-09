@@ -208,6 +208,7 @@ void exec_setPosition()
 void exec_changeLength()
 {
   executing = true;
+  motors_engage();
   float x = asFloat(inParam1);
   float y = asFloat(inParam2);
   
@@ -237,35 +238,79 @@ void exec_changeLength(float a, float b) {
   int speedB = motorB.speed();
   motorA.moveTo(a);
   motorB.moveTo(b);
-  if (usingAcceleration) {
-    while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
-    {
-      motorA.run();
-      motorB.run();
-    }
+  while (motorA.distanceToGo() != 0 || motorB.distanceToGo() != 0)
+  {
+    motorA.run();
+    motorB.run();
   }
-  else {
-    long aDist = motorA.distanceToGo();
-    long bDist = motorB.distanceToGo();
-    while (aDist != 0 || bDist != 0)
-    {
-#ifdef DEBUG_DISTANCE_TO_GO
-      Serial.print("Distancetogo: ");
-      Serial.print(aDist);
-      Serial.print(",");
-      Serial.println(bDist);
-#endif
-      if (aDist < 0) motorA.setSpeed(-speedA);
-      else motorA.setSpeed(speedA);
-      if (bDist < 0) motorB.setSpeed(-speedB);
-      else motorB.setSpeed(speedB);
-      
-      if (aDist != 0) motorA.runSpeed();
-      if (bDist != 0) motorB.runSpeed();
+}
 
-      aDist = motorA.distanceToGo();
-      bDist = motorB.distanceToGo();
-    }
+void exec_changeLengthAtSpeed(float a, float b, long maxSpeed) {
+  motorA.moveTo(a);
+  motorB.moveTo(b);
+  
+  float speed = abs(maxSpeed);
+  float aDist = motorA.distanceToGo();
+  float bDist = motorB.distanceToGo();
+  float distDiff = abs(aDist) - abs(bDist);
+  float aSpeed = speed;
+  float bSpeed = speed;
+  
+#ifdef DEBUG_DISTANCE_TO_GO
+  Serial.print("aSpeed: ");
+  Serial.print(aSpeed);
+  Serial.print(", bSpeed: ");
+  Serial.println(bSpeed);
+  Serial.print("Distancetogo: ");
+  Serial.print(aDist);
+  Serial.print(",");
+  Serial.print(bDist);
+  Serial.print(", diff: ");
+  Serial.println(distDiff);
+#endif
+  
+  if (distDiff > 0) {
+    // a is longest move
+    aSpeed = speed;
+    bSpeed = speed / (abs(aDist) / abs(bDist));
+  }
+  else if (distDiff < 0) {
+    aSpeed = speed / (abs(bDist) / abs(aDist));
+    bSpeed = speed;
+  }
+
+#ifdef DEBUG_DISTANCE_TO_GO
+  Serial.print("aSpeed: ");
+  Serial.print(aSpeed);
+  Serial.print(", bSpeed: ");
+  Serial.println(bSpeed);
+  Serial.print("Distancetogo: ");
+  Serial.print(aDist);
+  Serial.print(",");
+  Serial.print(bDist);
+  Serial.print(", diff: ");
+  Serial.println(distDiff);
+#endif
+
+  while (aDist != 0 || bDist != 0)
+  {
+#ifdef DEBUG_DISTANCE_TO_GO
+    Serial.print("Distancetogo: ");
+    Serial.print(aDist);
+    Serial.print(",");
+    Serial.println(bDist);
+#endif
+
+    if (aDist < 0) motorA.setSpeed(-aSpeed);
+    else motorA.setSpeed(aSpeed);
+    if (bDist < 0) motorB.setSpeed(-bSpeed);
+    else motorB.setSpeed(bSpeed);
+    
+    if (aDist != 0) motorA.runSpeed();
+    if (bDist != 0) motorB.runSpeed();
+
+    aDist = motorA.distanceToGo();
+    bDist = motorB.distanceToGo();
   }
   
   Serial.print("Deviation A, B: ");
@@ -279,7 +324,11 @@ void exec_changeLengthCartesianMm(float x, float y) {
   float pB = getMachineB(machineWidth, x, y);
   pA = mmToMotorSteps(pA);
   pB = mmToMotorSteps(pB);
-  exec_changeLength(pA, pB);
+  
+  if (usingAcceleration)
+    exec_changeLength(pA, pB);
+  else
+    exec_changeLengthAtSpeed(pA, pB, motorA.speed());
 }
 
 /**
@@ -296,6 +345,8 @@ void exec_drawStraightToPoint()
   // First, convert these values to cartesian coordinates
   // We're going to figure out how many segments the line
   // needs chopping into.
+  maxSegmentLength = asInt(inParam3);
+  
   float mmc2x = asFloat(inParam1);
   float mmc2y = asFloat(inParam2);
   float c2x = mmToMotorSteps(mmc2x);
@@ -310,7 +361,7 @@ void exec_drawStraightToPoint()
   
   float machineWidthSteps = mmToMotorSteps(machineWidth);
   float machineHeightSteps = mmToMotorSteps(machineHeight);
-  float margin = 20.0; // 50mm margin is ridiculous
+  float margin = 20.0;
 
 #ifdef DEBUG
   Serial.print("From coords (mm-cart): ");
@@ -407,7 +458,7 @@ void exec_drawStraightToPoint()
       Serial.print("mm.");
 #endif  
       // do the move
-      runSpeed = exec_desiredSpeed(linesegs, runSpeed, accel*4);
+      runSpeed = exec_desiredSpeed(linesegs, runSpeed, accel*10);
 #ifdef DEBUG
       Serial.print("Setting speed:");
       Serial.println(runSpeed);

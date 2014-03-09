@@ -69,13 +69,17 @@ long accel = 3000;
 boolean usingAcceleration = true;
 
 // interval timer that will run the stepper motors...
-IntervalTimer motorTimer;
-// ... the rate it'll do it at (microseconds)
-int motorRunRate = 1000;
+//IntervalTimer motorTimer;
+//// ... the rate it'll do it at (microseconds)
+//int motorRunRate = 1000;
+//
+//// interval time that will run the deviation checker
+//IntervalTimer deviationTimer;
+//int deviationRunRate = 1000000; // once a second
 
-// interval time that will run the deviation checker
-IntervalTimer deviationTimer;
-int deviationRunRate = 1000000; // once a second
+// how often the comms thing runs
+IntervalTimer commsTimer;
+int commsRunRate = 1000;
 
 // Timestamp which is set when some thing happens. 
 // Used to determine whether to go to sleep or not.
@@ -214,6 +218,7 @@ void setup() {
 
   //motorTimer.begin(runMotors, motorRunRate);
   //deviationTimer.begin(deviationChecker, deviationRunRate);
+  commsTimer.begin(comms_checkForCommand, commsRunRate);
   
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
@@ -234,18 +239,38 @@ void recalculateSizes() {
 }
 
 // ... and the function that get's called by it
-void runMotors(void) {
-  if (runningMotors) {
-    if (usingAcceleration) {
-      motorA.run();
-      motorB.run();
-    }
-    else {
-      motorA.runSpeed();
-      motorB.runSpeed();
-    }
-  }
-}
+//void runMotors(void) {
+//  if (runningMotors) {
+//    if (usingAcceleration) {
+//      motorA.run();
+//      motorB.run();
+//    }
+//    else {
+//      float aDist = motorA.distanceToGo();
+//      float bDist = motorB.distanceToGo();
+//      while (aDist != 0 || bDist != 0)
+//      {
+//    #ifdef DEBUG_DISTANCE_TO_GO
+//        Serial.print("Distancetogo: ");
+//        Serial.print(aDist);
+//        Serial.print(",");
+//        Serial.println(bDist);
+//    #endif
+//    
+//        if (aDist < 0) motorA.setSpeed(-aSpeed);
+//        else motorA.setSpeed(aSpeed);
+//        if (bDist < 0) motorB.setSpeed(-bSpeed);
+//        else motorB.setSpeed(bSpeed);
+//        
+//        if (aDist != 0) motorA.runSpeed();
+//        if (bDist != 0) motorB.runSpeed();
+//    
+//        aDist = motorA.distanceToGo();
+//        bDist = motorB.distanceToGo();      
+//      }
+//    }
+//  }
+//}
 
 void deviationChecker(void) {
   motorA.correctDeviation();
