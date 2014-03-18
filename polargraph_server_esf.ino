@@ -16,18 +16,18 @@ const String FIRMWARE_VERSION_NO = "2.0";
   ========================================================================*/
 
 // encoders, left and right
-Encoder encA(18, 19);
-Encoder encB(6, 5);
+Encoder encA(17, 18);
+Encoder encB(5, 4);
 
 // AccelStepperEncoder objects
 AccelStepperEncoder motorA(AccelStepperEncoder::DRIVER, 14, 15, 1, 1, false);
-int enablePinA = 17;
+int enablePinA = 16;
 AccelStepperEncoder motorB(AccelStepperEncoder::DRIVER, 1, 2, 1, 1, false);
-int enablePinB = 4;
+int enablePinB = 3;
 
 // Endstop pins
-int leftEndStopPin = 21;
-int rightEndStopPin = 22;
+int leftEndStopPin = 19;
+int rightEndStopPin = 6;
 
 // definition of the motor and drive train
 float motorToEncoderRatio = 1.51;
@@ -229,7 +229,7 @@ void setup() {
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
   
-  //motors_calibrateHome();
+  motors_calibrateHome();
 }
 
 void recalculateSizes() {
