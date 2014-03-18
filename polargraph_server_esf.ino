@@ -17,7 +17,7 @@ const String FIRMWARE_VERSION_NO = "2.0";
 
 // encoders, left and right
 Encoder encA(17, 18);
-Encoder encB(5, 4);
+Encoder encB(4, 5);
 
 // AccelStepperEncoder objects
 AccelStepperEncoder motorA(AccelStepperEncoder::DRIVER, 14, 15, 1, 1, false);

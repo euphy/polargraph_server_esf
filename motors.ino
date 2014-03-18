@@ -73,8 +73,8 @@ void motors_calibrateHome() {
   motorB.synchroniseMotorWithEncoder();
   
   motorTimer.end();
-  motorA.setAcceleration(10000);
-  motorB.setAcceleration(10000);
+  motorA.setAcceleration(3000);
+  motorB.setAcceleration(3000);
   
   exec_changeLength(mmToMotorSteps(equilibriumA), mmToMotorSteps(equilibriumB));
  
