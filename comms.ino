@@ -49,7 +49,7 @@ void comms_checkForCommand() {
           comms_ready();          
         }
       }
-      else {
+      else if (ch >= 40) {
         bufferPosition++;
         if (bufferPosition > INLENGTH)
         { // if the command is too big, chuck it out!
@@ -83,6 +83,14 @@ void comms_commandLoop() {
       else
       {
         Serial.println(F("Command not parsed."));
+        strcpy(nextCommand, "");
+        strcpy(inCmd, "");
+        strcpy(inParam1, "");
+        strcpy(inParam2, "");
+        strcpy(inParam3, "");
+        strcpy(inParam4, "");
+        inNoOfParams = 0;
+        commandConfirmed = false;
       }
     }
   }
@@ -231,8 +239,7 @@ void comms_requestResend()
 }
 void comms_unrecognisedCommand(String inCmd, String inParam1, String inParam2, String inParam3, String inParam4, String inNoOfParams)
 {
-  Serial.print(F("Sorry, "));
-  Serial.print(F("Command:"));
+  Serial.print(F("Sorry, command: "));
   Serial.print(inCmd);
   Serial.print(F(", p1:"));
   Serial.print(inParam1);

@@ -6,8 +6,8 @@
 #include <Metro.h>
 
 #define DEBUG_COMMS_BUFF
-//#define DEBUG_COMMS
-//#define DEBUG
+#define DEBUG_COMMS
+#define DEBUG
 
 const String FIRMWARE_VERSION_NO = "2.0";
 
@@ -55,7 +55,7 @@ float equilibriumA = 0;
 float equilibriumB = 0;
 
 float maxLength = 0.0;
-float minLength = 110.0; // got to be slightly longer than the endstop offsets
+float minLength = 210.0; // got to be slightly longer than the endstop offsets
 
 /*==========================================================================
     CONTROL VARIABLES... on or off, how fast
@@ -144,7 +144,7 @@ const char INTERMINATOR = ';';
 // reserve some characters
 static char nextCommand[INLENGTH+1];
 volatile int bufferPosition = 0;
-static char inCmd[5] ;
+static char inCmd[10] ;
 static char inParam1[11];
 static char inParam2[11];
 static char inParam3[11];
@@ -229,7 +229,10 @@ void setup() {
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
   
-  motors_calibrateHome();
+  //motors_calibrateHome();
+  isCalibrated = true;
+  motorA.writeEnc(mmToEncoderSteps(300));
+  motorB.writeEnc(mmToEncoderSteps(300));
 }
 
 void recalculateSizes() {
