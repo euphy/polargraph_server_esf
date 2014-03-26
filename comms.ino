@@ -63,7 +63,15 @@ void comms_checkForCommand() {
   }
 }
 
-
+void comms_clearParams() {
+  strcpy(inCmd, "");
+  strcpy(inParam1, "");
+  strcpy(inParam2, "");
+  strcpy(inParam3, "");
+  strcpy(inParam4, "");
+  inNoOfParams = 0;
+}
+  
 void comms_commandLoop() {
   while (true) {
     impl_runBackgroundProcesses();
@@ -79,17 +87,13 @@ void comms_commandLoop() {
         commandConfirmed = false;
         comms_ready(); // signal ready for next
         comms_executeParsedCommand();
+        comms_clearParams();
       }
       else
       {
         Serial.println(F("Command not parsed."));
         strcpy(nextCommand, "");
-        strcpy(inCmd, "");
-        strcpy(inParam1, "");
-        strcpy(inParam2, "");
-        strcpy(inParam3, "");
-        strcpy(inParam4, "");
-        inNoOfParams = 0;
+        comms_clearParams();
         commandConfirmed = false;
       }
     }
@@ -162,7 +166,13 @@ void comms_extractParams(char* inS) {
       Serial.print(F("Param "));
       Serial.print(paramNumber);
       Serial.print(": ");
-      Serial.println(param);
+      Serial.print(param);
+      Serial.print("... ");
+      for (int i = 0; i<sizeof(param); i++) {
+        Serial.print(":");
+        Serial.print((int)param[i]);
+      }
+      Serial.println(".");
 #endif
   }
   inNoOfParams = paramNumber;
@@ -176,7 +186,9 @@ void comms_extractParams(char* inS) {
     Serial.print(F(", p3:"));
     Serial.print(inParam3);
     Serial.print(F(", p4:"));
-    Serial.println(inParam4);
+    Serial.print(inParam4);
+    Serial.print(F(", inNoOfParams "));
+    Serial.println(inNoOfParams);
 #endif
 }
 
