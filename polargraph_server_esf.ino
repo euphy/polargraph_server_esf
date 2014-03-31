@@ -160,6 +160,7 @@ boolean commandConfirmed = false;
 boolean usingCrc = false;
 boolean reportingPosition = true;
 boolean requestResend = false;
+boolean ledLit = true;
 
 /*==========================================================================
     EEPROM ADDRESSES, this way for hot eeprom action.
@@ -201,6 +202,8 @@ float maxSegmentLength = 10.0;
   ========================================================================*/
 void setup() {
   Serial.begin(9600);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
   Serial.println("Polargraph Pro");
   recalculateSizes();
   delay(3000); 

@@ -240,6 +240,8 @@ void comms_ready()
 {
   comms_reportPosition();
   Serial.println(READY);
+  ledLit = !ledLit;
+  digitalWrite(13, ledLit);
 }
 void comms_drawing()
 {
