@@ -5,9 +5,9 @@
 #include "EEPROMAnything.h"
 #include <Metro.h>
 
-#define DEBUG_COMMS_BUFF
-#define DEBUG_COMMS
-#define DEBUG
+//#define DEBUG_COMMS_BUFF
+//#define DEBUG_COMMS
+//#define DEBUG
 
 const String FIRMWARE_VERSION_NO = "2.0";
 
@@ -42,13 +42,13 @@ float encStepsPerMm;
 float mmPerEncStep;
 
 // machine size
-float machineWidth = 308.0;
-float machineHeight = 450.0;
+float machineWidth = 705.0;
+float machineHeight = 980.0;
 
 // Endstop positions in mm. This is really a description of the distance
 // from the magnet to the pen tip.
 long leftEndStopOffset = 85.0;
-long rightEndStopOffset = 97.0;
+long rightEndStopOffset = 85.0;
 
 // Equilibrium position - where the pen was when it was turned on.
 float equilibriumA = 0;
