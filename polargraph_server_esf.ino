@@ -4,7 +4,7 @@
 #include <Servo.h>
 #include "EEPROMAnything.h"
 #include <Metro.h>
-
+//
 //#define DEBUG_COMMS_BUFF
 //#define DEBUG_COMMS
 //#define DEBUG
@@ -47,8 +47,8 @@ float machineHeight = 980.0;
 
 // Endstop positions in mm. This is really a description of the distance
 // from the magnet to the pen tip.
-long leftEndStopOffset = 85.0;
-long rightEndStopOffset = 85.0;
+long leftEndStopOffset = 97.0;
+long rightEndStopOffset = 97.0;
 
 // Equilibrium position - where the pen was when it was turned on.
 float equilibriumA = 0;
@@ -232,10 +232,10 @@ void setup() {
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
   
-  //motors_calibrateHome();
-  isCalibrated = true;
-  motorA.writeEnc(mmToEncoderSteps(300));
-  motorB.writeEnc(mmToEncoderSteps(300));
+  motors_calibrateHome();
+//  isCalibrated = true;
+//  motorA.writeEnc(mmToEncoderSteps(300));
+//  motorB.writeEnc(mmToEncoderSteps(300));
 }
 
 void recalculateSizes() {

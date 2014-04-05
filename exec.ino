@@ -231,6 +231,7 @@ void exec_changeLength()
 }
 
 void exec_changeLength(float a, float b) {
+  if (!powerOn) motors_engage();
   int speedA = motorA.speed();
   int speedB = motorB.speed();
   motorA.moveTo(a);
@@ -243,6 +244,7 @@ void exec_changeLength(float a, float b) {
 }
 
 void exec_changeLengthAtSpeed(float a, float b, long maxSpeed) {
+  if (!powerOn) motors_engage();
   motorA.moveTo(a);
   motorB.moveTo(b);
   
@@ -407,8 +409,12 @@ void exec_drawStraightToPoint()
 //    float totalDistance = sqrt(sq(deltaX) + sq(deltaY));
 
     long linesegs = 1;            // assume at least 1 line segment will get us there.
+    if (maxSegmentLength < 2) maxSegmentLength = 10;
     if (abs(deltaX) > abs(deltaY))
     {
+      #ifdef DEBUG
+      Serial.println("x is biggger than y");
+      #endif
       // slope <=1 case    
       while ((abs(deltaX)/(float)linesegs) > maxSegmentLength)
       {
@@ -417,13 +423,20 @@ void exec_drawStraightToPoint()
     }
     else
     {
+
       // slope >1 case
+      
       while ((abs(deltaY)/(float)linesegs) > maxSegmentLength)
       {
         linesegs++;
       }
     }
     
+
+#ifdef DEBUG
+    Serial.print("Line segs: ");
+    Serial.println(linesegs);
+#endif
     // reduce delta to one line segments' worth.
     deltaX = deltaX/(float)linesegs;
     deltaY = deltaY/(float)linesegs;
