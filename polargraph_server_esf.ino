@@ -1,10 +1,10 @@
-#include <Encoder.h>
+ #include <Encoder.h>
 #include <AccelStepperEncoder.h>
 #include <EEPROM.h>
 #include <Servo.h>
 #include "EEPROMAnything.h"
 #include <Metro.h>
-//
+
 //#define DEBUG_COMMS_BUFF
 //#define DEBUG_COMMS
 //#define DEBUG
@@ -42,13 +42,13 @@ float encStepsPerMm;
 float mmPerEncStep;
 
 // machine size
-float machineWidth = 705.0;
+float machineWidth = 725.0;
 float machineHeight = 980.0;
 
 // Endstop positions in mm. This is really a description of the distance
 // from the magnet to the pen tip.
-long leftEndStopOffset = 97.0;
-long rightEndStopOffset = 97.0;
+long leftEndStopOffset = 102.0;
+long rightEndStopOffset = 102.0;
 
 // Equilibrium position - where the pen was when it was turned on.
 float equilibriumA = 0;
@@ -89,7 +89,7 @@ int commsRunRate = 10000;
 volatile long lastActivityTime = 0L;
 
 // period between status rebroadcasts
-long comms_rebroadcastStatusInterval = 2000;
+long comms_rebroadcastStatusInterval = 10000;
 Metro heartbeat = Metro(comms_rebroadcastStatusInterval);
 
 // Whether to kill the motors after inactivity
@@ -228,6 +228,12 @@ void setup() {
   //motorTimer.begin(runMotors, motorRunRate);
   //deviationTimer.begin(deviationChecker, deviationRunRate);
   commsTimer.begin(comms_checkForCommand, commsRunRate);
+  
+  pinMode(21, OUTPUT);
+  pinMode(22, OUTPUT);
+  
+  digitalWrite(21, LOW);
+  digitalWrite(22, HIGH);
   
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;

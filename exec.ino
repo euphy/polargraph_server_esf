@@ -20,6 +20,10 @@ routines are here.
 */
 boolean exec_executeBasicCommand(String inCmd, String inParam1, String inParam2, String inParam3, String inParam4, String inNoOfParams)
 {
+  #ifdef DEBUG
+  Serial.print("Command: ");
+  Serial.println(inCmd);
+  #endif
   boolean executed = true;
   if (inCmd.startsWith(CMD_CHANGELENGTH))
     exec_changeLength();

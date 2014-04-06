@@ -52,6 +52,11 @@ void penlift_movePen(int start, int end, int delay_ms)
 
 void penlift_penUp()
 {
+  #ifdef DEBUG
+  Serial.print("Pen up: ");
+  Serial.println(inParam1);
+  #endif
+  
   if (inNoOfParams > 1)
   {
     //Serial.print("Penup with params");
