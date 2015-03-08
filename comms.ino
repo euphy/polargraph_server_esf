@@ -271,6 +271,17 @@ void comms_reportPosition()
   if (reportingPosition)
   {
     if (isCalibrated) {
+#ifdef DEBUG 
+      Serial.print("Encs: ");
+      Serial.print(motorA.readEnc());
+      Serial.print(", ");
+      Serial.println(motorB.readEnc());
+      
+      Serial.print("In mm: ");
+      Serial.print(encoderStepsToMm(motorA.readEnc()));
+      Serial.print(", ");
+      Serial.println(encoderStepsToMm(motorB.readEnc()));      
+#endif      
       float cX = getCartesianX(machineWidth, encoderStepsToMm(motorA.readEnc()), encoderStepsToMm(motorB.readEnc()));
       float cY = getCartesianY(cX, encoderStepsToMm(motorA.readEnc()));
       Serial.print("CARTESIAN,");

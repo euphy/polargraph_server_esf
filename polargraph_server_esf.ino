@@ -8,6 +8,7 @@
 //#define DEBUG_COMMS_BUFF
 //#define DEBUG_COMMS
 //#define DEBUG
+//#define DEBUG_DISTANCE_TO_GO
 
 const String FIRMWARE_VERSION_NO = "2.0";
 
@@ -42,8 +43,8 @@ float encStepsPerMm;
 float mmPerEncStep;
 
 // machine size
-float machineWidth = 725.0;
-float machineHeight = 980.0;
+float machineWidth = 700.0;
+float machineHeight = 900.0;
 
 // Endstop positions in mm. This is really a description of the distance
 // from the magnet to the pen tip.
@@ -196,6 +197,11 @@ boolean isPenUp = false;
   ========================================================================*/
 float maxSegmentLength = 10.0;
 
+/*==========================================================================
+    INDICATOR STUFF, led and button
+  ========================================================================*/
+static const INDICATOR_LED = 12;
+static const BUTTON_PIN = 22;
 
 /*==========================================================================
     SOME ACTUAL CODE!!
@@ -206,7 +212,10 @@ void setup() {
   digitalWrite(13, HIGH);
   Serial.println("Polargraph Pro");
   recalculateSizes();
+  pinMode(12, OUTPUT);
+  digitalWrite(INDICATOR_LED, HIGH);
   delay(3000); 
+  digitalWrite(INDICATOR_LED, LOW);
   Serial.println("Polargraph Pro");
   pinMode(rightEndStopPin, INPUT); 
   pinMode(leftEndStopPin, INPUT); 
@@ -229,15 +238,11 @@ void setup() {
   //deviationTimer.begin(deviationChecker, deviationRunRate);
   commsTimer.begin(comms_checkForCommand, commsRunRate);
   
-  pinMode(21, OUTPUT);
-  pinMode(22, OUTPUT);
-  
-  digitalWrite(21, LOW);
-  digitalWrite(22, HIGH);
-  
   // enable hardware CRC checking
   SIM_SCGC6 |= SIM_SCGC6_CRC;
-  
+
+  pinMode(BUTTON_PIN, INPUT);
+
   motors_calibrateHome();
 //  isCalibrated = true;
 //  motorA.writeEnc(mmToEncoderSteps(300));
