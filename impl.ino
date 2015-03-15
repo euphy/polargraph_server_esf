@@ -75,6 +75,12 @@ void impl_runBackgroundProcesses()
     Serial.println("Powering down because of inactivity.");
     motors_release();
   }
+  
+  if (waitForButton) {
+    if (digitalRead(BUTTON_PIN)) {
+      flashSignal(INDICATOR_LED, 20, 10, 1);
+    }
+  }
 }
 
 void impl_loadMachineSpecFromEeprom()

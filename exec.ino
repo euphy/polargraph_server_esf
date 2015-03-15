@@ -53,10 +53,26 @@ boolean exec_executeBasicCommand(String inCmd, String inParam1, String inParam2,
     exec_reportMachineSpec();
   else if (inCmd.startsWith(CMD_RESETEEPROM))
     eeprom_resetEeprom();
+  else if (inCmd.startsWith(CMD_ACTIVATE_SIGNAL))
+    exec_changeSignal(true);
+  else if (inCmd.startsWith(CMD_DEACTIVATE_SIGNAL))
+    exec_changeSignal(false);
   else
     executed = false;
 
   return executed;
+}
+
+void exec_changeSignal(boolean waiting)
+{
+  if (waiting) {
+    digitalWrite(INDICATOR_LED, HIGH);
+    waitForButton = true;
+  }
+  else {
+    digitalWrite(INDICATOR_LED, LOW);
+    waitForButton = false;
+  }
 }
 
 void exec_reportMachineSpec()

@@ -125,13 +125,16 @@ const static String CMD_SETPENLIFTRANGE = "C45";
 const static String CMD_SET_ROVE_AREA = "C21";
 const static String CMD_RANDOM_DRAW = "C36";
 const static String CMD_CHANGELENGTH_RELATIVE = "C40";
-const static String CMD_AUTO_CALIBRATE = F("C48");
+const static String CMD_AUTO_CALIBRATE = "C48";
+const static String CMD_ACTIVATE_SIGNAL = "C49";
+const static String CMD_DEACTIVATE_SIGNAL = "C50";
 
 const String READY = "READY_300";
 const String RESEND = "RESEND";
 const String DRAWING = "BUSY";
 const static String OUT_CMD_SYNC = "SYNC";
 const static String OUT_CMD_CARTESIAN = F("CARTESIAN");
+const static String OUT_CMD_BUTTON_PRESSED = "BUTTON";
 
 
 /*==========================================================================
@@ -200,8 +203,9 @@ float maxSegmentLength = 10.0;
 /*==========================================================================
     INDICATOR STUFF, led and button
   ========================================================================*/
-static const INDICATOR_LED = 12;
-static const BUTTON_PIN = 22;
+static const int INDICATOR_LED = 12;
+static const int BUTTON_PIN = 22;
+boolean waitForButton = false;
 
 /*==========================================================================
     SOME ACTUAL CODE!!
@@ -212,10 +216,9 @@ void setup() {
   digitalWrite(13, HIGH);
   Serial.println("Polargraph Pro");
   recalculateSizes();
-  pinMode(12, OUTPUT);
-  digitalWrite(INDICATOR_LED, HIGH);
+  pinMode(INDICATOR_LED, OUTPUT);
+  flashSignal(INDICATOR_LED, 10, 10, 1.5);
   delay(3000); 
-  digitalWrite(INDICATOR_LED, LOW);
   Serial.println("Polargraph Pro");
   pinMode(rightEndStopPin, INPUT); 
   pinMode(leftEndStopPin, INPUT); 
@@ -242,6 +245,13 @@ void setup() {
   SIM_SCGC6 |= SIM_SCGC6_CRC;
 
   pinMode(BUTTON_PIN, INPUT);
+  delay(500);
+  byte buttonValue = digitalRead(BUTTON_PIN);
+  if (buttonValue == 1) {
+    Serial.println("Entering debug mode");
+    flashSignal(INDICATOR_LED, 100, 15, 1);
+    digitalWrite(INDICATOR_LED, HIGH);
+  }
 
   motors_calibrateHome();
 //  isCalibrated = true;
@@ -249,6 +259,17 @@ void setup() {
 //  motorB.writeEnc(mmToEncoderSteps(300));
 }
 
+void flashSignal(int pin, int startLength, int iterations, float multiplier) {
+  int d = startLength;
+  for (int i=0; i < iterations; i++) {
+    digitalWrite(INDICATOR_LED, HIGH);
+    delay(d);
+    digitalWrite(INDICATOR_LED, LOW);
+    delay(d);
+    d = d*multiplier;
+  }
+    
+}
 void recalculateSizes() {
   encStepsPerRev = stepsPerRev / motorToEncoderRatio;
   
