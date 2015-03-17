@@ -41,8 +41,6 @@ boolean exec_executeBasicCommand(String inCmd, String inParam1, String inParam2,
     penlift_penUp();
   else if (inCmd.startsWith(CMD_SETMACHINESIZE))
     exec_setMachineSizeFromCommand();
-//  else if (com.startsWith(CMD_SETMACHINENAME))
-//    exec_setMachineNameFromCommand();
   else if (inCmd.startsWith(CMD_SETMACHINEMMPERREV))
     exec_setMachineMmPerRevFromCommand();
   else if (inCmd.startsWith(CMD_SETMACHINESTEPSPERREV))

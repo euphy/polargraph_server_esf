@@ -18,6 +18,7 @@ The distance from the pen tip to the magnets is fixed, and known, measured
 manually during the fitting of the magnets.
 */
 void motors_calibrateHome() {
+  Serial.println("Calibrating.");
   executing = true;
   motorTimer.begin(runMotors, motorRunRate);
   

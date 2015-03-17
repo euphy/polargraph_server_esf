@@ -5,9 +5,9 @@
 #include "EEPROMAnything.h"
 #include <Metro.h>
 
-//#define DEBUG_COMMS_BUFF
-//#define DEBUG_COMMS
-//#define DEBUG
+#define DEBUG_COMMS_BUFF
+#define DEBUG_COMMS
+#define DEBUG
 //#define DEBUG_DISTANCE_TO_GO
 
 const String FIRMWARE_VERSION_NO = "2.0";
@@ -241,22 +241,22 @@ void setup() {
   //deviationTimer.begin(deviationChecker, deviationRunRate);
   commsTimer.begin(comms_checkForCommand, commsRunRate);
   
-  // enable hardware CRC checking
-  SIM_SCGC6 |= SIM_SCGC6_CRC;
+//  // enable hardware CRC checking
+//  SIM_SCGC6 |= SIM_SCGC6_CRC;
 
   pinMode(BUTTON_PIN, INPUT);
   delay(500);
   byte buttonValue = digitalRead(BUTTON_PIN);
   if (buttonValue == 1) {
-    Serial.println("Entering debug mode");
+    Serial.println("Entering wait mode");
     flashSignal(INDICATOR_LED, 100, 15, 1);
     digitalWrite(INDICATOR_LED, HIGH);
   }
 
-  motors_calibrateHome();
-//  isCalibrated = true;
-//  motorA.writeEnc(mmToEncoderSteps(300));
-//  motorB.writeEnc(mmToEncoderSteps(300));
+//  motors_calibrateHome();
+  isCalibrated = true;
+  motorA.writeEnc(mmToEncoderSteps(300));
+  motorB.writeEnc(mmToEncoderSteps(300));
 }
 
 void flashSignal(int pin, int startLength, int iterations, float multiplier) {
