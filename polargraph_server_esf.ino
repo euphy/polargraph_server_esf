@@ -143,7 +143,7 @@ const static String OUT_CMD_BUTTON_PRESSED = "BUTTON";
 
 // max length of incoming command
 const int INLENGTH = 60;
-const char INTERMINATOR = ';';
+const char INTERMINATOR = 10;
 
 // reserve some characters
 static char nextCommand[INLENGTH+1];
