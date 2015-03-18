@@ -38,6 +38,7 @@ float encStepsPerRev;
 
 float stepsPerMm;
 float mmPerStep;
+int stepMultiplier = 1;
 
 float encStepsPerMm;
 float mmPerEncStep;
@@ -96,7 +97,7 @@ Metro heartbeat = Metro(comms_rebroadcastStatusInterval);
 // Whether to kill the motors after inactivity
 boolean automaticPowerDown = true;
 // length of time since last activity before killing the motors.
-long idleTimeBeforePowerDown = 600000L;
+long idleTimeBeforePowerDown = 10000L;
 boolean powerOn = false;
 
 // whether the machine is confident of it's location
@@ -126,8 +127,8 @@ const static String CMD_SET_ROVE_AREA = "C21";
 const static String CMD_RANDOM_DRAW = "C36";
 const static String CMD_CHANGELENGTH_RELATIVE = "C40";
 const static String CMD_AUTO_CALIBRATE = "C48";
-const static String CMD_ACTIVATE_SIGNAL = "C49";
-const static String CMD_DEACTIVATE_SIGNAL = "C50";
+const static String CMD_ACTIVATE_BUTTON = "C49";
+const static String CMD_DEACTIVATE_BUTTON = "C50";
 
 const String READY = "READY_300";
 const String RESEND = "RESEND";
@@ -205,7 +206,7 @@ float maxSegmentLength = 10.0;
   ========================================================================*/
 static const int INDICATOR_LED = 12;
 static const int BUTTON_PIN = 22;
-boolean waitForButton = false;
+boolean readingButton = false;
 
 /*==========================================================================
     SOME ACTUAL CODE!!
@@ -251,12 +252,18 @@ void setup() {
     Serial.println("Entering wait mode");
     flashSignal(INDICATOR_LED, 100, 15, 1);
     digitalWrite(INDICATOR_LED, HIGH);
+    readingButton = true;
   }
 
-//  motors_calibrateHome();
-  isCalibrated = true;
-  motorA.writeEnc(mmToEncoderSteps(300));
-  motorB.writeEnc(mmToEncoderSteps(300));
+  if (readingButton) {
+    isCalibrated = true;
+    motorA.writeEnc(mmToEncoderSteps(300));
+    motorB.writeEnc(mmToEncoderSteps(300));
+    motors_release();
+  }
+  else {
+    motors_calibrateHome();
+  }
 }
 
 void flashSignal(int pin, int startLength, int iterations, float multiplier) {

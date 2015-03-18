@@ -51,25 +51,25 @@ boolean exec_executeBasicCommand(String inCmd, String inParam1, String inParam2,
     exec_reportMachineSpec();
   else if (inCmd.startsWith(CMD_RESETEEPROM))
     eeprom_resetEeprom();
-  else if (inCmd.startsWith(CMD_ACTIVATE_SIGNAL))
-    exec_changeSignal(true);
-  else if (inCmd.startsWith(CMD_DEACTIVATE_SIGNAL))
-    exec_changeSignal(false);
+  else if (inCmd.startsWith(CMD_ACTIVATE_BUTTON))
+    exec_changeReadingButton(true);
+  else if (inCmd.startsWith(CMD_DEACTIVATE_BUTTON))
+    exec_changeReadingButton(false);
   else
     executed = false;
 
   return executed;
 }
 
-void exec_changeSignal(boolean waiting)
+void exec_changeReadingButton(boolean reading)
 {
-  if (waiting) {
+  if (reading) {
     digitalWrite(INDICATOR_LED, HIGH);
-    waitForButton = true;
+    readingButton = true;
   }
   else {
     digitalWrite(INDICATOR_LED, LOW);
-    waitForButton = false;
+    readingButton = false;
   }
 }
 
@@ -78,9 +78,9 @@ void exec_reportMachineSpec()
   eeprom_dumpEeprom();
 
   Serial.print(F("PGSIZE,"));
-  Serial.print(machineWidth);
+  Serial.print(int(machineWidth));
   Serial.print(COMMA);
-  Serial.print(machineHeight);
+  Serial.print(int(machineHeight));
   Serial.println(CMD_END);
 
   Serial.print(F("PGMMPERREV,"));
@@ -91,11 +91,15 @@ void exec_reportMachineSpec()
   Serial.print(stepsPerRev);
   Serial.println(CMD_END);
   
-//  Serial.print(F("PGLIFT,"));
-//  Serial.print(downPosition);
-//  Serial.print(COMMA);
-//  Serial.print(upPosition);
-//  Serial.println(CMD_END);
+  Serial.print(F("PGSTEPMULTIPLIER,"));
+  Serial.print(stepMultiplier);
+  Serial.println(CMD_END);
+  
+  Serial.print(F("PGLIFT,"));
+  Serial.print(downPosition);
+  Serial.print(COMMA);
+  Serial.print(upPosition);
+  Serial.println(CMD_END);
 
   Serial.print(F("PGSPEED,"));
   Serial.print(maxSpeed);
