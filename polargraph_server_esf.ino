@@ -5,9 +5,9 @@
 #include "EEPROMAnything.h"
 #include <Metro.h>
 
-#define DEBUG_COMMS_BUFF
-#define DEBUG_COMMS
-#define DEBUG
+//#define DEBUG_COMMS_BUFF
+//#define DEBUG_COMMS
+//#define DEBUG
 //#define DEBUG_DISTANCE_TO_GO
 
 const String FIRMWARE_VERSION_NO = "2.0";
