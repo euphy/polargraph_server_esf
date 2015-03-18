@@ -28,8 +28,8 @@ void motors_calibrateHome() {
   motorA.setAcceleration(10000);
   motorB.setAcceleration(10000);
   while (digitalRead(leftEndStopPin) == HIGH) {
-    motorA.move(-10);
-    motorB.move(+12);
+    motorA.move(-20);
+    motorB.move(+24);
   }
   delay(500);
   float leftWoundIn = abs(motorA.readEnc());
@@ -50,8 +50,8 @@ void motors_calibrateHome() {
   
   
   while (digitalRead(rightEndStopPin) == HIGH) {
-    motorB.move(-10);
-    motorA.move(+12);
+    motorB.move(-20);
+    motorA.move(+24);
   }
   delay(500);
   float rightWoundIn = abs(motorB.readEnc());

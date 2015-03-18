@@ -76,9 +76,10 @@ void impl_runBackgroundProcesses()
     motors_release();
   }
   
-  if (waitForButton) {
+  if (readingButton) {
     if (digitalRead(BUTTON_PIN)) {
       flashSignal(INDICATOR_LED, 20, 10, 1);
+      digitalWrite(INDICATOR_LED, HIGH);
       Serial.println(OUT_CMD_BUTTON_PRESSED);
     }
   }
