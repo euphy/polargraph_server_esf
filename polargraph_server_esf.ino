@@ -10,6 +10,11 @@
 //#define DEBUG
 //#define DEBUG_DISTANCE_TO_GO
 
+// https://forum.pjrc.com/threads/24304-_reboot_Teensyduino()-vs-_restart_Teensyduino()
+#define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
+#define CPU_RESTART_VAL 0x5FA0004
+#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL);
+
 const String FIRMWARE_VERSION_NO = "2.0";
 
 /*==========================================================================
@@ -129,6 +134,7 @@ const static String CMD_CHANGELENGTH_RELATIVE = "C40";
 const static String CMD_AUTO_CALIBRATE = "C48";
 const static String CMD_ACTIVATE_BUTTON = "C49";
 const static String CMD_DEACTIVATE_BUTTON = "C50";
+const static String CMD_RESET_MACHINE = "C51";
 
 const String READY = "READY_300";
 const String RESEND = "RESEND";
@@ -260,6 +266,8 @@ void setup() {
     motorA.writeEnc(mmToEncoderSteps(300));
     motorB.writeEnc(mmToEncoderSteps(300));
     motors_release();
+    flashSignal(INDICATOR_LED, 20, 10, 1);
+    readingButton = false;
   }
   else {
     motors_calibrateHome();
