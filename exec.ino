@@ -55,6 +55,9 @@ boolean exec_executeBasicCommand(String inCmd, String inParam1, String inParam2,
     exec_changeReadingButton(true);
   else if (inCmd.startsWith(CMD_DEACTIVATE_BUTTON))
     exec_changeReadingButton(false);
+  else if (inCmd.startsWith(CMD_RESET_MACHINE)) {
+    CPU_RESTART
+  }
   else
     executed = false;
 

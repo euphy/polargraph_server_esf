@@ -26,7 +26,9 @@ void comms_checkForCommand() {
       char ch = Serial.read();       // get it
       nextCommand[bufferPosition] = ch;
 #ifdef DEBUG_COMMS_BUFF
-      Serial.print("Command so far: ");
+      Serial.print("Just got ");
+      Serial.print(ch);
+      Serial.print(", so command so far: ");
       Serial.println(nextCommand);
 #endif
       if (ch == INTERMINATOR)

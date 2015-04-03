@@ -27,11 +27,16 @@ void motors_calibrateHome() {
   motors_engage();
   motorA.setAcceleration(10000);
   motorB.setAcceleration(10000);
+  boolean val = HIGH;
   while (digitalRead(leftEndStopPin) == HIGH) {
     motorA.move(-20);
     motorB.move(+24);
+    digitalWrite(INDICATOR_LED, val);
+    val = !val;
+    Serial.print(".");
   }
   delay(500);
+  digitalWrite(INDICATOR_LED, LOW);
   float leftWoundIn = abs(motorA.readEnc());
   float leftDistanceInEncoderSteps = mmToEncoderSteps(leftEndStopOffset);
   motorA.writeEnc(leftDistanceInEncoderSteps);
