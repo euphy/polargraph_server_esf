@@ -49,8 +49,8 @@ float machineHeight = 900.0;
 
 // Endstop positions in mm. This is really a description of the distance
 // from the magnet to the pen tip.
-long leftEndStopOffset = 102.0;
-long rightEndStopOffset = 102.0;
+long leftEndStopOffset = 96.0;
+long rightEndStopOffset = 96.0;
 
 // Equilibrium position - where the pen was when it was turned on.
 float equilibriumA = 0;
@@ -260,6 +260,7 @@ void setup() {
     motorA.writeEnc(mmToEncoderSteps(300));
     motorB.writeEnc(mmToEncoderSteps(300));
     motors_release();
+    flashSignal(INDICATOR_LED, 20, 8, 1);
   }
   else {
     motors_calibrateHome();
